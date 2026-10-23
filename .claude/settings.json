@@ -1,0 +1,11 @@
+{
+  "enabledPlugins": {
+    "claude-security@anthropic-plugin-directory": true,
+    "securitymaxxing@anthropic-plugin-directory": true,
+    "owasp-security-audit@anthropic-plugin-directory": true,
+    "playwright@anthropic-plugin-directory": true,
+    "snagly@anthropic-plugin-directory": true,
+    "axe-accessibility@anthropic-plugin-directory": true,
+    "e2e-test-generator-playwright-and-cypress-tests@anthropic-plugin-directory": true
+  }
+}
