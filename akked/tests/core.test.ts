@@ -3,7 +3,7 @@ import { normalizePhone } from '../src/lib/phone';
 import { renderTemplate, waLink } from '../src/lib/templates';
 import { canAddOrders } from '../src/lib/plans';
 import { parseOrders } from '../src/lib/import';
-import { FORMATS, toCsv } from '../src/lib/exporters';
+import { FORMATS, toCsv, toXlsx } from '../src/lib/exporters';
 
 describe('phone', () => {
   it('normalizes', () => {
@@ -40,6 +40,16 @@ describe('import/export', () => {
   });
   it('exports with national phone and formula guard', () => {
     const csv = toCsv(FORMATS.ameex, [{ order_number: 'AK-1', customer_name: '=cmd', phone: '+212612345678', city: 'Casa', address: '', products: 'Robe', size: 'M', color: '', quantity: 1, price: 199, notes: '' }]);
-    expect(csv).toContain('0612345678'); expect(csv).toContain("'=cmd");
+    expect(csv).toContain('0612345678');
+    expect(csv.split('\r\n')[0].replace('\uFEFF','')).toBe('NUMERO DE COMMANDE,DESTINATAIRE,TELEPHONE,ADRESSE,PRIX,VILLE,COMMENTAIRE,MARCHANDISE'); expect(csv).toContain("'=cmd");
+  });
+  it('builds AMEEX xlsx from the official template', async () => {
+    const ExcelJS = (await import('exceljs')).default;
+    const o = { order_number: 'AK-1', customer_name: 'Sara', phone: '+212612345678', city: 'Casa', address: 'Rue 1', products: 'Robe', size: 'M', color: '', quantity: 2, price: 199, notes: 'n' };
+    const buf = await toXlsx(FORMATS.ameex, [o], 'templates/AMEEX_MODELE.xlsx');
+    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf as any);
+    const ws = wb.worksheets[0];
+    expect(ws.getRow(1).getCell(1).value).toBe('NUMERO DE COMMANDE');
+    expect(ws.getRow(2).values).toEqual([undefined, 'AK-1', 'Sara', '0612345678', 'Rue 1', 199, 'Casa', 'n', 'Robe M x2']);
   });
 });

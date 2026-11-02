@@ -17,7 +17,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
     <div className="inline" style={{ marginBottom: 12 }}>
       <Link className="btn" href="/orders/new">+ {t.newOrder}</Link>
       <Link className="btn sec" href="/orders/import">{t.import}</Link>
-      <a className="btn sec" href="/export?format=ameex">{t.export} AMEEX</a>
+      <a className="btn sec" href="/export?format=ameex">{t.export} AMEEX (xlsx)</a>
       <a className="btn sec" href="/export?format=generic">{t.export} CSV</a>
     </div>
     <p className="muted">{t.plan}: {PLANS[ws.plan as PlanKey].name} · {t.usage}: {used}/{lim === Infinity ? '∞' : lim}</p>

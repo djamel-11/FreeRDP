@@ -19,7 +19,7 @@ Moroccan phone normalization · filters/search · wa.me WhatsApp with editable D
 · dashboard · monthly order limit + expiry enforcement · Arabic RTL default / French · PWA manifest.
 
 ## Known gaps before going public
-- **AMEEX export uses placeholder columns** and CSV, not the real `AMEEX_MODELE.xlsx` (file not provided yet).
+- AMEEX export now uses the real `AMEEX_MODELE.xlsx` (kept in `templates/`). Phone is written as national format (06...) as text; confirm AMEEX accepts this, and whether PRIX is the COD amount.
 - No native `.xlsx` import (paste cells or save as CSV). No password reset, email invites, or callback reminders yet.
 - Tenant isolation is enforced in application queries (every query filters by `workspace_id`), not by DB-level RLS. Moving to Postgres/Supabase should add RLS.
 - No login rate limiting; add before production. Use HTTPS (cookie is `secure` in production).
