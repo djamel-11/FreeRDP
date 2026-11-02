@@ -1,4 +1,5 @@
 import { db } from './db';
+import { canonicalCity } from './cities';
 import { canAddOrders, PLANS, type PlanKey, type WorkspaceState } from './plans';
 import type { ParsedOrder } from './import';
 import type { ExportOrder } from './exporters';
@@ -90,3 +91,9 @@ export function exportableOrders(wsId: number, markExported: boolean): ExportOrd
 
 export const teamMembers = (wsId: number) => db().prepare('SELECT id, full_name, email, role FROM users WHERE workspace_id = ?').all(wsId) as any[];
 export { PLANS, type PlanKey };
+
+/** Confirmed orders whose city isn't recognised (would be exported with the raw spelling). */
+export function unmatchedCities(wsId: number): { id: number; order_number: string; city: string }[] {
+  const rows = db().prepare(`SELECT id, order_number, city FROM orders WHERE workspace_id = ? AND status = 'confirmed'`).all(wsId) as any[];
+  return rows.filter((r) => !canonicalCity(r.city));
+}

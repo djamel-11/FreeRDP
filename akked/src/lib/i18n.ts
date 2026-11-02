@@ -20,7 +20,7 @@ const dict = {
     s_new: 'جديد', s_message_sent: 'تم إرسال الرسالة', s_confirmed: 'مؤكد', s_cancelled: 'ملغى', s_no_answer: 'لا يجيب',
     s_callback: 'معاودة الاتصال', s_shipped: 'تم الشحن', s_delivered: 'تم التسليم', s_returned: 'مرتجع',
     openWa: 'فتح واتساب', total: 'المجموع', none: 'لا شيء', updateStatus: 'تحديث الحالة', myTemplates: 'قوالب الرسائل', vars: 'المتغيرات',
-    darija: 'الدارجة', arabic: 'العربية', french: 'الفرنسية', exported: 'مُصدَّر',
+    cityWarn: 'مدينة غير معروفة في طلبات مؤكدة (صحّحها قبل التصدير)', darija: 'الدارجة', arabic: 'العربية', french: 'الفرنسية', exported: 'مُصدَّر',
   },
   fr: {
     appName: 'Akked', tagline: 'Confirmez vos commandes plus vite, réduisez les refus',
@@ -40,7 +40,7 @@ const dict = {
     s_new: 'Nouveau', s_message_sent: 'Message envoyé', s_confirmed: 'Confirmé', s_cancelled: 'Annulé', s_no_answer: 'Pas de réponse',
     s_callback: 'À rappeler', s_shipped: 'Expédié', s_delivered: 'Livré', s_returned: 'Retourné',
     openWa: 'Ouvrir WhatsApp', total: 'Total', none: 'Aucun', updateStatus: 'Mettre à jour', myTemplates: 'Modèles de messages', vars: 'Variables',
-    darija: 'Darija', arabic: 'Arabe', french: 'Français', exported: 'Exporté',
+    cityWarn: 'Ville non reconnue dans des commandes confirmées (corrigez avant export)', darija: 'Darija', arabic: 'Arabe', french: 'Français', exported: 'Exporté',
   },
 } as const;
 

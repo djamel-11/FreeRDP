@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { normalizePhone } from '../src/lib/phone';
 import { renderTemplate, waLink } from '../src/lib/templates';
 import { canAddOrders } from '../src/lib/plans';
+import { canonicalCity } from '../src/lib/cities';
 import { parseOrders } from '../src/lib/import';
 import { FORMATS, toCsv, toXlsx } from '../src/lib/exporters';
 
@@ -50,6 +51,20 @@ describe('import/export', () => {
     const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf as any);
     const ws = wb.worksheets[0];
     expect(ws.getRow(1).getCell(1).value).toBe('NUMERO DE COMMANDE');
-    expect(ws.getRow(2).values).toEqual([undefined, 'AK-1', 'Sara', '0612345678', 'Rue 1', 199, 'Casa', 'n', 'Robe M x2']);
+    expect(ws.getRow(2).values).toEqual([undefined, 'AK-1', 'Sara', '0612345678', 'Rue 1', 199, 'Casablanca', 'n', 'Robe M x2']);
+  });
+});
+
+describe('cities', () => {
+  it('canonicalizes spellings', () => {
+    expect(canonicalCity('casa')).toBe('Casablanca');
+    expect(canonicalCity('  الدار البيضاء ')).toBe('Casablanca');
+    expect(canonicalCity('FES')).toBe('Fès');
+    expect(canonicalCity('فاس')).toBe('Fès');
+    expect(canonicalCity('kenitra')).toBe('Kénitra');
+    expect(canonicalCity('Marakech')).toBe('Marrakech');
+    expect(canonicalCity('Tetouane')).toBe('Tétouan');
+    expect(canonicalCity('Atlantis')).toBeNull();
+    expect(canonicalCity('')).toBeNull();
   });
 });

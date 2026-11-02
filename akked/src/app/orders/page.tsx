@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { requireSession } from '@/lib/auth';
 import { getT, STATUSES } from '@/lib/i18n';
-import { getWorkspace, listOrders, monthlyUsage, teamMembers, PLANS, type PlanKey } from '@/lib/orders';
+import { getWorkspace, listOrders, unmatchedCities, monthlyUsage, teamMembers, PLANS, type PlanKey } from '@/lib/orders';
 import { isActive } from '@/lib/plans';
 import { db } from '@/lib/db';
 
@@ -11,9 +11,11 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
   const rows = listOrders(me.workspaceId, sp);
   const agents = teamMembers(me.workspaceId);
   const cities = db().prepare(`SELECT DISTINCT city FROM orders WHERE workspace_id = ? AND city <> '' ORDER BY city`).all(me.workspaceId) as any[];
+  const badCities = unmatchedCities(me.workspaceId);
   const used = monthlyUsage(me.workspaceId); const lim = PLANS[ws.plan as PlanKey].orders;
   return (<>
     {!isActive(ws) && <div className="err">{t.expired}</div>}
+    {badCities.length > 0 && <div className="err">⚠ {t.cityWarn}: {badCities.map((b) => <Link key={b.id} href={`/orders/${b.id}`}>{b.order_number} ({b.city || '—'}) </Link>)}</div>}
     <div className="inline" style={{ marginBottom: 12 }}>
       <Link className="btn" href="/orders/new">+ {t.newOrder}</Link>
       <Link className="btn sec" href="/orders/import">{t.import}</Link>

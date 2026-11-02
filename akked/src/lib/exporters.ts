@@ -1,3 +1,4 @@
+import { canonicalCity } from './cities';
 /** Configurable export formats. Add a delivery company by adding an entry here (or later a DB row). */
 export interface ExportOrder {
   order_number: string; customer_name: string; phone: string; city: string; address: string;
@@ -18,7 +19,7 @@ export const FORMATS: Record<string, ExportFormat> = {
       { header: 'TELEPHONE', value: (o) => nationalPhone(o.phone) },
       { header: 'ADRESSE', value: (o) => o.address },
       { header: 'PRIX', value: (o) => o.price },
-      { header: 'VILLE', value: (o) => o.city },
+      { header: 'VILLE', value: (o) => canonicalCity(o.city) ?? o.city },
       { header: 'COMMENTAIRE', value: (o) => o.notes },
       { header: 'MARCHANDISE', value: (o) => [o.products, o.size, o.color].filter(Boolean).join(' ') + (o.quantity > 1 ? ` x${o.quantity}` : '') },
     ],
