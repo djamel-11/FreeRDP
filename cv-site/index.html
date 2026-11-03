@@ -123,6 +123,19 @@ button.add{margin-top:10px;width:100%;border:1.5px dashed var(--ui);color:var(--
 .tpl-sidebar main h2{font-size:25pt;font-weight:800;color:#0f172a}
 .tpl-sidebar main .title{color:var(--acc);font-size:13pt;margin:2px 0 4px;font-weight:700}
 .tpl-sidebar aside p{font-size:9.5pt}
+.phrow{display:flex;align-items:center;gap:10px;margin-top:4px}
+.phrow img{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--bd)}
+.phbtn,.phrm{padding:8px 14px;border-radius:10px;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer;margin:0}
+.phbtn{background:#eef2ff;color:var(--ui);border:1.5px dashed var(--ui)}
+.phrm{background:#fee2e2;color:#dc2626;border:0}
+.sheet .hd{position:relative}
+.sheet .ph{position:absolute;top:10mm;inset-inline-end:15mm;width:34mm;height:34mm;border-radius:50%;object-fit:cover;border:3px solid #ffffffee;outline:1px solid #0000001a}
+.sheet .hd.hasph{padding-inline-end:54mm}
+.tpl-elegant .hd.hasph{padding-inline:40mm}
+.tpl-elegant .ph{inset-inline-end:0;top:9mm}
+.tpl-bold .ph{inset-inline-end:0;top:2mm}
+.tpl-bold .hd.hasph{padding-inline-end:40mm}
+.tpl-sidebar aside .ph{position:static;display:block;margin:0 auto 10px;width:36mm;height:36mm}
 </style>
 </head>
 <body>
@@ -146,6 +159,8 @@ button.add{margin-top:10px;width:100%;border:1.5px dashed var(--ui);color:var(--
     <input type="hidden" id="tpl" value="modern">
 
     <div class="step"><i>1</i><span data-t="s1"></span></div><fieldset>
+      <label data-t="photo"></label>
+      <div class="phrow"><img id="phprev" alt="" hidden><label class="phbtn" for="phfile" data-t="addphoto"></label><input type="file" id="phfile" accept="image/*" hidden><button type="button" class="phrm" id="phrm" data-t="rmphoto" hidden></button></div>
       <label data-t="name"></label><input id="name">
       <label data-t="jobtitle"></label><input id="title">
       <div class="row">
@@ -198,7 +213,7 @@ en:{dir:'ltr',pill:'100% free · No sign-up · No watermark',brand:'Free CV Make
  tpl:'Style',tpls:['Modern','Classic','Sidebar','Minimal','Elegant','Bold'],color:'Color',s1:'Personal details',s2:'Summary',s3:'Experience',s4:'Education',s5:'Skills',s6:'Languages',
  name:'Full name',jobtitle:'Job title',phone:'Phone',email:'Email',city:'City / Country',link:'Link (LinkedIn or website)',
  ph_sum:'Two or three sentences about your experience and goals',ph_sk:'Excel, Customer service, Project management',ph_lg:'Arabic (native), English (fluent)',sk_hint:'Separate with commas',
- addexp:'+ Add experience',addedu:'+ Add education',pdf:'Download PDF',clear:'Clear all',note:'Click "Download PDF" and choose "Save as PDF" as the printer. Your data is saved in your browser only, so it is here when you come back.',
+ photo:'Photo (optional)',addphoto:'Upload photo',rmphoto:'Remove',addexp:'+ Add experience',addedu:'+ Add education',pdf:'Download PDF',clear:'Clear all',note:'Click "Download PDF" and choose "Save as PDF" as the printer. Your data is saved in your browser only, so it is here when you come back.',
  preview:'Live preview',fab:'Download PDF free',foot:'Free CV Maker · A free tool that runs in your browser',
  role:'Job title',org:'Company',period:'Period (e.g. 2021 - 2024)',desc:'Duties & achievements',degree:'Degree',school:'University / School',del:'Delete',confirm:'Clear all data?',
  sum:'Summary',exp:'Experience',edu:'Education',sk:'Skills',lg:'Languages',yourname:'Your Name',doc:'Resume',pagetitle:'Free CV Maker - Build your resume free, no sign-up'},
@@ -206,7 +221,7 @@ fr:{dir:'ltr',pill:'100 % gratuit · Sans inscription · Sans filigrane',brand:'
  tpl:'Style',tpls:['Moderne','Classique','Latéral','Minimal','Élégant','Audacieux'],color:'Couleur',s1:'Informations personnelles',s2:'Profil',s3:'Expérience',s4:'Formation',s5:'Compétences',s6:'Langues',
  name:'Nom complet',jobtitle:'Poste',phone:'Téléphone',email:'E-mail',city:'Ville / Pays',link:'Lien (LinkedIn ou site)',
  ph_sum:'Deux ou trois phrases sur votre expérience et vos objectifs',ph_sk:'Excel, Service client, Gestion de projet',ph_lg:'Arabe (langue maternelle), Anglais (courant)',sk_hint:'Séparez par des virgules',
- addexp:'+ Ajouter une expérience',addedu:'+ Ajouter une formation',pdf:'Télécharger en PDF',clear:'Tout effacer',note:'Cliquez sur « Télécharger en PDF » puis choisissez « Enregistrer au format PDF ». Vos données sont enregistrées uniquement dans votre navigateur.',
+ photo:'Photo (facultatif)',addphoto:'Ajouter une photo',rmphoto:'Supprimer',addexp:'+ Ajouter une expérience',addedu:'+ Ajouter une formation',pdf:'Télécharger en PDF',clear:'Tout effacer',note:'Cliquez sur « Télécharger en PDF » puis choisissez « Enregistrer au format PDF ». Vos données sont enregistrées uniquement dans votre navigateur.',
  preview:'Aperçu en direct',fab:'Télécharger le PDF gratuitement',foot:'CV Gratuit · Un outil gratuit qui fonctionne dans votre navigateur',
  role:'Poste',org:'Entreprise',period:'Période (ex. 2021 - 2024)',desc:'Missions et réalisations',degree:'Diplôme',school:'Université / École',del:'Supprimer',confirm:'Effacer toutes les données ?',
  sum:'Profil',exp:'Expérience',edu:'Formation',sk:'Compétences',lg:'Langues',yourname:'Votre nom',doc:'CV',pagetitle:'CV Gratuit - Créez votre CV gratuitement, sans inscription'}
@@ -264,6 +279,7 @@ function renderSheet(){
   const contact = [v('phone'),v('email'),v('city'),v('link')].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('');
   const block = (key, arr, fn) => { const h = arr.filter(it => Object.values(it).some(Boolean)).map(fn).join(''); return h ? `<h3>${L[key]}</h3>${h}` : ''; };
   const name = esc(v('name')) || L.yourname;
+  const ph = state.photo ? `<img class="ph" src="${state.photo}" alt="">` : '';
   const sum = v('summary') ? `<h3>${L.sum}</h3><p>${esc(v('summary'))}</p>` : '';
   const exp = block('exp', state.exp, e => `<div class="e"><b>${esc(e.role)}</b>${e.org?' — '+esc(e.org):''}<div class="d">${esc(e.period)}</div><p>${esc(e.desc)}</p></div>`);
   const edu = block('edu', state.edu, e => `<div class="e"><b>${esc(e.degree)}</b>${e.org?' — '+esc(e.org):''}<div class="d">${esc(e.period)}</div></div>`);
@@ -271,9 +287,9 @@ function renderSheet(){
   const lg = v('langs') ? `<h3>${L.lg}</h3><p>${esc(v('langs'))}</p>` : '';
   if(v('tpl')==='sidebar'){
     const ct = [v('phone'),v('email'),v('city'),v('link')].filter(Boolean).map(x=>`<span class="ct">${esc(x)}</span>`).join('');
-    sh.innerHTML = `<div class="sb"><aside>${ct}${sk}${lg}</aside><main><h2>${name}</h2><div class="title">${esc(v('title'))}</div>${sum}${exp}${edu}</main></div>`;
+    sh.innerHTML = `<div class="sb"><aside>${ph}${ct}${sk}${lg}</aside><main><h2>${name}</h2><div class="title">${esc(v('title'))}</div>${sum}${exp}${edu}</main></div>`;
   } else {
-    sh.innerHTML = `<div class="hd"><h2>${name}</h2><div class="title">${esc(v('title'))}</div><div class="contact">${contact}</div></div><div class="bd">${sum}${exp}${edu}${sk}${lg}</div>`;
+    sh.innerHTML = `<div class="hd${ph?' hasph':''}">${ph}<h2>${name}</h2><div class="title">${esc(v('title'))}</div><div class="contact">${contact}</div></div><div class="bd">${sum}${exp}${edu}${sk}${lg}</div>`;
   }
   document.title = v('name') ? L.doc + ' - ' + v('name') : L.pagetitle;
 }
@@ -289,6 +305,19 @@ document.addEventListener('click', e => {
   if(t.dataset.add){ state[t.dataset.add].push({}); renderForm(); refresh(); }
   if(t.dataset.rm){ const [k,i] = t.dataset.rm.split(':'); state[k].splice(+i,1); if(!state[k].length) state[k].push({}); renderForm(); refresh(); }
 });
+function syncPh(){ $('phprev').hidden = $('phrm').hidden = !state.photo; if(state.photo) $('phprev').src = state.photo; }
+$('phfile').onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  const img = new Image(), url = URL.createObjectURL(f);
+  img.onload = () => {
+    const n = 360, c = document.createElement('canvas'); c.width = c.height = n;
+    const m = Math.min(img.width, img.height), sx = (img.width-m)/2, sy = (img.height-m)/2;
+    c.getContext('2d').drawImage(img, sx, sy, m, m, 0, 0, n, n);
+    state.photo = c.toDataURL('image/jpeg', .85); URL.revokeObjectURL(url); e.target.value=''; syncPh(); refresh();
+  };
+  img.src = url;
+};
+$('phrm').onclick = () => { delete state.photo; syncPh(); refresh(); };
 $('print').onclick = $('fab').onclick = () => window.print();
 $('sw').innerHTML = [...$('color').options].map(o=>`<button type="button" style="background:${o.value}" data-c="${o.value}"></button>`).join('');
 function paintSw(){ document.querySelectorAll('#sw button').forEach(b=>b.classList.toggle('on', b.dataset.c===$('color').value)); document.documentElement.style.setProperty('--ui',$('color').value); }
@@ -297,7 +326,7 @@ $('tplgrid').onclick = e => { const b = e.target.closest('[data-tp]'); if(b){ $(
 $('sw').onclick = e => { if(e.target.dataset.c){ $('color').value = e.target.dataset.c; paintSw(); drawTpl(); refresh(); } };
 $('clear').onclick = () => { if(confirm(t('confirm'))){ try{localStorage.removeItem(KEY)}catch(e){} location.reload(); } };
 
-load(); if(!T[$('lang').value]) $('lang').value='en'; if(!TPLS.includes($('tpl').value)) $('tpl').value='modern'; applyLang(); if(![...$('color').options].some(o=>o.value===$('color').value)) $('color').selectedIndex=0; renderForm(); renderSheet(); paintSw();
+load(); if(!T[$('lang').value]) $('lang').value='en'; if(!TPLS.includes($('tpl').value)) $('tpl').value='modern'; applyLang(); syncPh(); if(![...$('color').options].some(o=>o.value===$('color').value)) $('color').selectedIndex=0; renderForm(); renderSheet(); paintSw();
 </script>
 </body>
 </html>
