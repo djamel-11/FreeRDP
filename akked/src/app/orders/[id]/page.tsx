@@ -3,11 +3,11 @@ import { requireSession } from '@/lib/auth';
 import { getT, STATUSES } from '@/lib/i18n';
 import { customerHistory, getOrder, getWorkspace } from '@/lib/orders';
 import { DEFAULT_TEMPLATES, renderTemplate, waLink } from '@/lib/templates';
-import { sendWhatsapp, updateStatus } from '../../actions';
+import { sendToAmeex, sendWhatsapp, updateStatus } from '../../actions';
 
-export default async function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ lang?: string }> }) {
+export default async function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ lang?: string; ameex?: string }> }) {
   const me = await requireSession(); const { t } = await getT();
-  const { id } = await params; const { lang } = await searchParams;
+  const { id } = await params; const { lang, ameex } = await searchParams;
   const o = getOrder(me.workspaceId, Number(id)); if (!o) notFound();
   const ws = getWorkspace(me.workspaceId);
   const hist = customerHistory(me.workspaceId, o.phone, o.id);
@@ -31,6 +31,12 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       <pre>{msg}</pre>
       <form action={sendWhatsapp}><input type="hidden" name="id" value={o.id} /><input type="hidden" name="url" value={waLink(o.phone, msg)} />
         <button>💬 {t.openWa}</button></form>
+    </div>
+    {ameex && <div className={ameex === 'ok' ? 'ok' : 'err'}>{ameex === 'ok' ? t.ameexSent : (t as any)['ameex_' + ameex]}</div>}
+    <div className="card"><h2>AMEEX</h2>
+      {o.ameex_parcel_code ? <p>{t.ameexParcel}: <strong dir="ltr">{o.ameex_parcel_code}</strong></p> : (
+        <form action={sendToAmeex}><input type="hidden" name="id" value={o.id} /><button disabled={o.status !== 'confirmed'}>🚚 {t.ameexSend}</button></form>)}
+      {o.ameex_error && <p className="muted" dir="ltr">{o.ameex_error}</p>}
     </div>
     <div className="card"><h2>{t.updateStatus}</h2>
       <form action={updateStatus} className="inline"><input type="hidden" name="id" value={o.id} />

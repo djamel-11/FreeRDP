@@ -18,6 +18,13 @@ Moroccan phone normalization · filters/search · wa.me WhatsApp with editable D
 · customer history + "refused before" badge (per seller only) · CSV export (AMEEX placeholder + generic, pluggable in `src/lib/exporters.ts`)
 · dashboard · monthly order limit + expiry enforcement · Arabic RTL default / French · PWA manifest.
 
+## AMEEX API integration
+Settings → AMEEX: each seller enters their own **API ID + API Key** (key stored AES-256-GCM encrypted; set `AKKED_SECRET` in production).
+A confirmed order gets a **Send to AMEEX** button (`Add Parcel`, status becomes Shipped, parcel code saved).
+AMEEX needs a numeric **city id**: the admin pastes `id,name` lines under `/admin` (names are matched to `src/lib/cities.ts`).
+The public docs don't show response bodies or a cities endpoint, so the parcel-code parsing is best-effort (raw response kept in `ameex_error`).
+Verify with one real parcel before relying on it. `AMEEX_BASE_URL` overrides the host for tests only.
+
 ## Known gaps before going public
 - AMEEX export now uses the real `AMEEX_MODELE.xlsx` (kept in `templates/`). Phone is written as national format (06...) as text; confirm AMEEX accepts this, and whether PRIX is the COD amount.
 - No native `.xlsx` import (paste cells or save as CSV). No password reset, email invites, or callback reminders yet.

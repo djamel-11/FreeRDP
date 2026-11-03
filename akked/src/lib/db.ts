@@ -37,6 +37,13 @@ export function db(): Database.Database {
     from_status TEXT, to_status TEXT, note TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
   `);
+  const cols = (tbl: string) => (d.prepare(`PRAGMA table_info(${tbl})`).all() as any[]).map((c) => c.name);
+  const addCol = (tbl: string, col: string, def: string) => { if (!cols(tbl).includes(col)) d.exec(`ALTER TABLE ${tbl} ADD COLUMN ${col} ${def}`); };
+  addCol('workspaces', 'ameex_api_id', 'TEXT');
+  addCol('workspaces', 'ameex_api_key_enc', 'TEXT');
+  addCol('orders', 'ameex_parcel_code', 'TEXT');
+  addCol('orders', 'ameex_error', 'TEXT');
+  d.exec(`CREATE TABLE IF NOT EXISTS ameex_cities (canonical TEXT PRIMARY KEY, ameex_id INTEGER NOT NULL)`);
   g.__akkedDb = d;
   return d;
 }

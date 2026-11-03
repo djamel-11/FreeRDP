@@ -20,7 +20,8 @@ const dict = {
     s_new: 'جديد', s_message_sent: 'تم إرسال الرسالة', s_confirmed: 'مؤكد', s_cancelled: 'ملغى', s_no_answer: 'لا يجيب',
     s_callback: 'معاودة الاتصال', s_shipped: 'تم الشحن', s_delivered: 'تم التسليم', s_returned: 'مرتجع',
     openWa: 'فتح واتساب', total: 'المجموع', none: 'لا شيء', updateStatus: 'تحديث الحالة', myTemplates: 'قوالب الرسائل', vars: 'المتغيرات',
-    cityWarn: 'مدينة غير معروفة في طلبات مؤكدة (صحّحها قبل التصدير)', darija: 'الدارجة', arabic: 'العربية', french: 'الفرنسية', exported: 'مُصدَّر',
+    ameexTitle: 'ربط AMEEX', ameexId: 'API ID', ameexKey: 'API Key (يُحفظ مشفّرًا؛ اتركه فارغًا للإبقاء على القديم)', ameexSent: 'تم الإرسال إلى AMEEX', ameexSend: 'إرسال إلى AMEEX', ameexParcel: 'رقم الطرد', ameexOff: 'تم فصل AMEEX', ameexSaved: 'تم الحفظ',
+    ameex_notconfirmed: 'يجب أن يكون الطلب مؤكدًا', ameex_already: 'سبق إرساله', ameex_nocreds: 'اربط حساب AMEEX من الإعدادات أولًا', ameex_nocity: 'مدينة غير معروفة أو بدون رقم AMEEX', ameex_fail: 'رفضه AMEEX أو تعذّر الاتصال', cityWarn: 'مدينة غير معروفة في طلبات مؤكدة (صحّحها قبل التصدير)', darija: 'الدارجة', arabic: 'العربية', french: 'الفرنسية', exported: 'مُصدَّر',
   },
   fr: {
     appName: 'Akked', tagline: 'Confirmez vos commandes plus vite, réduisez les refus',
@@ -40,7 +41,8 @@ const dict = {
     s_new: 'Nouveau', s_message_sent: 'Message envoyé', s_confirmed: 'Confirmé', s_cancelled: 'Annulé', s_no_answer: 'Pas de réponse',
     s_callback: 'À rappeler', s_shipped: 'Expédié', s_delivered: 'Livré', s_returned: 'Retourné',
     openWa: 'Ouvrir WhatsApp', total: 'Total', none: 'Aucun', updateStatus: 'Mettre à jour', myTemplates: 'Modèles de messages', vars: 'Variables',
-    cityWarn: 'Ville non reconnue dans des commandes confirmées (corrigez avant export)', darija: 'Darija', arabic: 'Arabe', french: 'Français', exported: 'Exporté',
+    ameexTitle: 'Connexion AMEEX', ameexId: 'API ID', ameexKey: 'API Key (chiffrée ; laisser vide pour conserver)', ameexSent: 'Envoyé à AMEEX', ameexSend: 'Envoyer à AMEEX', ameexParcel: 'Code colis', ameexOff: 'AMEEX déconnecté', ameexSaved: 'Enregistré',
+    ameex_notconfirmed: 'La commande doit être confirmée', ameex_already: 'Déjà envoyé', ameex_nocreds: 'Connectez AMEEX dans les paramètres', ameex_nocity: 'Ville inconnue ou sans ID AMEEX', ameex_fail: 'Refusé par AMEEX ou erreur réseau', cityWarn: 'Ville non reconnue dans des commandes confirmées (corrigez avant export)', darija: 'Darija', arabic: 'Arabe', french: 'Français', exported: 'Exporté',
   },
 } as const;
 

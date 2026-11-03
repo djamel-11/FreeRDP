@@ -97,3 +97,10 @@ export function unmatchedCities(wsId: number): { id: number; order_number: strin
   const rows = db().prepare(`SELECT id, order_number, city FROM orders WHERE workspace_id = ? AND status = 'confirmed'`).all(wsId) as any[];
   return rows.filter((r) => !canonicalCity(r.city));
 }
+
+export function ameexCityId(city: string): number | null {
+  const canon = canonicalCity(city);
+  if (!canon) return null;
+  const r = db().prepare('SELECT ameex_id FROM ameex_cities WHERE canonical = ?').get(canon) as any;
+  return r ? r.ameex_id : null;
+}

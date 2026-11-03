@@ -68,3 +68,32 @@ describe('cities', () => {
     expect(canonicalCity('')).toBeNull();
   });
 });
+
+import { buildParcelForm, extractParcelCode, sendParcel } from '../src/lib/ameex';
+import { decrypt, encrypt } from '../src/lib/secrets';
+describe('ameex api', () => {
+  const o = { id: 1, order_number: 'AK-1', customer_name: 'Sara', phone: '+212612345678', address: 'Rue 1', city: 'Casa', notes: '', products: 'Robe', size: 'M', color: '', quantity: 2, price: 199 };
+  it('builds the documented form', () => {
+    const f = buildParcelForm(o, '77', 5);
+    expect(Object.fromEntries(f.entries())).toMatchObject({ type: 'SIMPLE', business: '77', city: '5', phone: '0612345678', cod: '199', receiver: 'Sara', product: 'Robe M x2', replace: 'false' });
+  });
+  it('sends with headers and extracts code', async () => {
+    let seen: any;
+    const fake = (async (url: string, init: any) => { seen = { url, init }; return new Response(JSON.stringify({ data: { ParcelCode: 'MRK1' } }), { status: 200 }); }) as any;
+    const r = await sendParcel({ apiId: '77', apiKey: 'k' }, o, 5, fake);
+    expect(r).toMatchObject({ ok: true, parcelCode: 'MRK1' });
+    expect(seen.init.headers).toEqual({ 'C-Api-Id': '77', 'C-Api-Key': 'k' });
+    expect(seen.url).toBe('https://api.ameex.app/customer/Delivery/Parcels/Action/Type/Add');
+  });
+  it('handles rejection, network errors, missing address', async () => {
+    expect((await sendParcel({ apiId: '1', apiKey: 'k' }, o, 5, (async () => new Response('{"status":false}', { status: 200 })) as any)).ok).toBe(false);
+    expect((await sendParcel({ apiId: '1', apiKey: 'k' }, o, 5, (async () => { throw new Error('boom'); }) as any)).error).toBe('network');
+    expect((await sendParcel({ apiId: '1', apiKey: 'k' }, { ...o, address: ' ' }, 5)).error).toBe('address_required');
+    expect(extractParcelCode(null)).toBeNull();
+  });
+  it('encrypts keys round-trip', () => {
+    process.env.AKKED_SECRET = 'test-secret-test-secret';
+    const e = encrypt('abc'); expect(e).not.toContain('abc'); expect(decrypt(e)).toBe('abc');
+    expect(() => decrypt(e.replace(/.$/, 'A'))).toThrow();
+  });
+});
