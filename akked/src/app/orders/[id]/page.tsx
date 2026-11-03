@@ -17,7 +17,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const msg = renderTemplate(tpl, { name: o.customer_name, product: [o.products, o.size, o.color].filter(Boolean).join(' '), price: o.price, city: o.city || '' });
   return (<>
     <div className="card">
-      <h1>{o.customer_name} <span className={`badge ${o.status}`}>{(t as any)['s_' + o.status]}</span></h1>
+      <h1><bdi>{o.customer_name}</bdi> <span className={`badge ${o.status}`}>{(t as any)['s_' + o.status]}</span></h1>
       {refused > 0 && <div className="err">⚠ {t.refusedBefore} ×{refused}</div>}
       <p dir="ltr" style={{ textAlign: 'start' }}>{o.phone} · {o.city} · {o.address}</p>
       <p>{o.products} {o.size} {o.color} ×{o.quantity} — <strong>{o.price} MAD</strong></p>

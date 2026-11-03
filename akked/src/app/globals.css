@@ -16,3 +16,6 @@ button.sec,.btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line
 .bar{background:var(--brand);height:10px;border-radius:5px;min-width:2px}.kpi{font-size:28px;font-weight:700}
 table{width:100%;border-collapse:collapse}td,th{padding:8px;text-align:start;border-bottom:1px solid var(--line);font-size:14px}
 pre{white-space:pre-wrap;background:var(--bg);padding:10px;border-radius:8px}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.nm{font-weight:700;font-size:17px}.price{font-weight:600;white-space:nowrap}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}
+form.inline>div{flex:1 1 130px}form.inline>div input{width:100%}

@@ -28,22 +28,21 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
       <select name="status" defaultValue={sp.status ?? ''}><option value="">{t.status}: {t.all}</option>{STATUSES.map((s) => <option key={s} value={s}>{(t as any)['s_' + s]}</option>)}</select>
       <select name="city" defaultValue={sp.city ?? ''}><option value="">{t.city}: {t.all}</option>{cities.map((c) => <option key={c.city}>{c.city}</option>)}</select>
       <select name="agent" defaultValue={sp.agent ?? ''}><option value="">{t.agent}: {t.all}</option>{agents.map((a) => <option key={a.id} value={a.id}>{a.full_name}</option>)}</select>
-      <input type="date" name="from" defaultValue={sp.from} title={t.from} /><input type="date" name="to" defaultValue={sp.to} title={t.to} />
-      <button className="sec">{t.filter}</button>
+      <div><label>{t.from}</label><input type="date" name="from" defaultValue={sp.from} /></div>
+      <div><label>{t.to}</label><input type="date" name="to" defaultValue={sp.to} /></div>
+      <div style={{ flexBasis: '100%' }}><button className="sec" style={{ width: '100%' }}>{t.filter}</button></div>
     </form>
     <div className="card">
       {rows.length === 0 && <p className="muted">{t.none}</p>}
       {rows.map((o) => (
         <Link key={o.id} href={`/orders/${o.id}`} className="o">
-          <div className="inline" style={{ justifyContent: 'space-between' }}>
-            <strong style={{ flex: '1 1 auto' }}>{o.customer_name}</strong>
-            <span style={{ flex: '0 0 auto' }}>
-              {o.refusals > 0 && <span className="badge bad">⚠ {t.refusedBefore}</span>}{' '}
-              <span className={`badge ${o.status}`}>{(t as any)['s_' + o.status]}</span>
-            </span>
+          <div className="top"><bdi className="nm">{o.customer_name}</bdi><span className="price" dir="ltr">{o.price} MAD</span></div>
+          <div className="tags">
+            <span className={`badge ${o.status}`}>{(t as any)['s_' + o.status]}</span>
+            {o.refusals > 0 && <span className="badge bad">⚠ {t.refusedBefore}{o.refusals > 1 ? ` ×${o.refusals}` : ''}</span>}
           </div>
-          <div className="muted" dir="ltr" style={{ textAlign: 'start' }}>{o.phone} · {o.city} · {o.price} MAD</div>
-          <div className="muted">{o.products} {o.size} {o.color} ×{o.quantity}</div>
+          <div className="muted"><bdi dir="ltr">{o.phone}</bdi> · {o.city}</div>
+          <div className="muted"><bdi dir="auto">{o.quantity}× {o.products} {o.size} {o.color}</bdi></div>
         </Link>))}
     </div></>);
 }

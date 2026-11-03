@@ -24,7 +24,7 @@ export function createOrders(wsId: number, userId: number | null, rows: ParsedOr
   const num = d.prepare(`UPDATE orders SET order_number = ? WHERE id = ?`);
   d.transaction(() => {
     for (const r of rows) {
-      const info = ins.run({ ...r, wsId, source });
+      const info = ins.run({ ...r, city: canonicalCity(r.city) ?? r.city, wsId, source });
       num.run('AK-' + (10000 + Number(info.lastInsertRowid)), info.lastInsertRowid);
     }
   })();
