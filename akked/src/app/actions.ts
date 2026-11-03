@@ -33,7 +33,7 @@ export async function login(f: FormData) {
   const u = db().prepare('SELECT * FROM users WHERE email = ?').get(s(f, 'email').toLowerCase()) as any;
   if (!u || !verifyPassword(s(f, 'password'), u.password_hash)) redirect('/login?error=1');
   await startSession(u.id);
-  redirect('/orders');
+  redirect('/confirm');
 }
 
 export async function logout() {
@@ -173,4 +173,52 @@ export async function adminImportCityIds(f: FormData) {
     if (canon) { up.run(canon, Number(m[1])); ok++; } else bad.push(m[2]);
   }
   redirect(`/admin?cities_ok=${ok}&cities_bad=${encodeURIComponent(bad.slice(0, 40).join('|'))}`);
+}
+
+const localStamp = (d: Date) => { const z = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; };
+
+/** Called when the agent taps the WhatsApp button in the queue: new → message_sent. */
+export async function markSent(id: number) {
+  const me = await requireSession();
+  const o = db().prepare('SELECT status FROM orders WHERE id = ? AND workspace_id = ?').get(id, me.workspaceId) as any;
+  if (o?.status === 'new') changeStatus(me.workspaceId, me.userId, id, 'message_sent');
+  revalidatePath('/confirm');
+}
+
+/** One-tap result from the confirmation queue (bound per button: id, status, optional hours/"tomorrow"). */
+export async function quickStatus(id: number, status: string, hours: string, _fd?: FormData) {
+  const me = await requireSession();
+  if (!['confirmed', 'cancelled', 'no_answer', 'callback'].includes(status)) return;
+  let cb: string | null = null;
+  if (status === 'callback') {
+    const d = new Date();
+    if (hours === 'tomorrow') { d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); } else d.setHours(d.getHours() + (parseInt(hours) || 2));
+    cb = localStamp(d);
+  }
+  changeStatus(me.workspaceId, me.userId, Number(id), status, cb);
+  revalidatePath('/confirm');
+  redirect('/confirm?lane=reply');
+}
+
+/** Save the reviewed drafts from the smart-add screen. */
+export async function quickAddOrders(f: FormData) {
+  const me = await requireSession();
+  let drafts: any[] = [];
+  try { drafts = JSON.parse(s(f, 'drafts')); } catch { /* ignore */ }
+  if (!Array.isArray(drafts)) drafts = [];
+  const rows = []; let skipped = 0;
+  for (const d of drafts.slice(0, 200)) {
+    const phone = normalizePhone(String(d.phone ?? ''));
+    const name = String(d.customer_name ?? '').trim();
+    if (!phone || !name) { skipped++; continue; }
+    rows.push({
+      customer_name: name.slice(0, 120), phone, city: String(d.city ?? '').trim().slice(0, 80), address: String(d.address ?? '').trim().slice(0, 300),
+      products: String(d.products ?? '').trim().slice(0, 200), size: String(d.size ?? '').trim().slice(0, 40), color: String(d.color ?? '').trim().slice(0, 40),
+      quantity: Math.max(1, parseInt(String(d.quantity)) || 1), price: parseFloat(String(d.price ?? '').replace(',', '.')) || 0, notes: String(d.notes ?? '').trim().slice(0, 500),
+    });
+  }
+  if (!rows.length) redirect('/orders/quick?error=none');
+  const r = createOrders(me.workspaceId, me.userId, rows, 'quick');
+  if (r.error) redirect('/orders/quick?error=' + r.error);
+  redirect(`/orders?added=${r.created}&skipped=${skipped}`);
 }

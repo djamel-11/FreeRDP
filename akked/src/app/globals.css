@@ -19,3 +19,5 @@ pre{white-space:pre-wrap;background:var(--bg);padding:10px;border-radius:8px}
 .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}.nm{font-weight:700;font-size:17px}.price{font-weight:600;white-space:nowrap}
 .tags{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}
 form.inline>div{flex:1 1 130px}form.inline>div input{width:100%}
+.big{width:100%;padding:16px;font-size:18px;border-radius:12px;text-align:center}.btn.big{display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid2 .big{width:100%}button.ok{background:#16a34a;color:#fff}.btn.on{background:var(--ink);color:#fff}

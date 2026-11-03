@@ -108,12 +108,12 @@ function lev1(a: string, b: string): boolean {
 }
 
 /** Returns the canonical city name, or null if it can't be matched confidently. */
-export function canonicalCity(input: string | null | undefined): string | null {
+export function canonicalCity(input: string | null | undefined, opts: { fuzzy?: boolean } = {}): string | null {
   const k = squash(input ?? '');
   if (!k) return null;
   const exact = INDEX.get(k);
   if (exact) return exact;
-  if (k.length < 5) return null;
+  if (opts.fuzzy === false || k.length < 5) return null;
   const hits = new Set<string>();
   for (const [alias, name] of INDEX) if (alias.length >= 5 && lev1(k, alias)) hits.add(name);
   return hits.size === 1 ? [...hits][0] : null; // typo tolerance only when unambiguous

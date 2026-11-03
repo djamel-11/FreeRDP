@@ -103,3 +103,35 @@ describe('ameex api', () => {
     expect(() => decrypt(e.replace(/.$/, 'A'))).toThrow();
   });
 });
+
+import { parseOrdersText } from '../src/lib/freetext';
+describe('free text orders', () => {
+  it('parses labelled French', () => {
+    const [d] = parseOrdersText('Nom: Sara Alaoui\nTel: 06 12 34 56 78\nVille: casa\nAdresse: Rue 5 n 3\nProduit: Robe rouge\nPrix: 199 dh');
+    expect(d).toMatchObject({ customer_name: 'Sara Alaoui', phone: '+212612345678', city: 'Casablanca', address: 'Rue 5 n 3', products: 'Robe rouge', price: '199' });
+  });
+  it('parses labelled Arabic', () => {
+    const [d] = parseOrdersText('الاسم: فاطمة\nالهاتف: 0661223344\nالمدينة: فاس\nالمنتج: قفطان\nالثمن: 350 درهم');
+    expect(d).toMatchObject({ customer_name: 'فاطمة', phone: '+212661223344', city: 'Fes', products: 'قفطان', price: '350' });
+  });
+  it('parses unlabelled lines', () => {
+    const [d] = parseOrdersText('Hind\n0700112233\nMarrakech\nSac cuir\n120 dh');
+    expect(d).toMatchObject({ customer_name: 'Hind', phone: '+212700112233', city: 'Marrakech', products: 'Sac cuir', price: '120' });
+  });
+  it('parses one-line orders, several at once', () => {
+    const r = parseOrdersText('Sara 0612345678 casa robe 199dh\nOmar 0655443322 tanger chemise XL 180 dh');
+    expect(r).toHaveLength(2);
+    expect(r[0]).toMatchObject({ customer_name: 'Sara', phone: '+212612345678', city: 'Casablanca', products: 'robe', price: '199' });
+    expect(r[1]).toMatchObject({ customer_name: 'Omar', city: 'Tanger', price: '180' });
+  });
+  it('splits blocks by blank line and ignores empty', () => {
+    expect(parseOrdersText('Nom: A\nTel: 0612345678\n\nNom: B\nTel: 0700112233')).toHaveLength(2);
+    expect(parseOrdersText('  ')).toEqual([]);
+  });
+  it('handles a mixed paste without blank lines', () => {
+    const r = parseOrdersText('سارة 0612345678 كازا فستان 199 درهم\nYoussef 0661223344 fes veste L 250 dh\nNom: Hind\nTel: 07 00 11 22 33');
+    expect(r.map((d) => d.phone)).toEqual(['+212612345678', '+212661223344', '+212700112233']);
+    expect(r[2].customer_name).toBe('Hind');
+    expect(r[0]).toMatchObject({ customer_name: 'سارة', city: 'Casablanca', price: '199' });
+  });
+});

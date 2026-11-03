@@ -105,3 +105,21 @@ export function ameexCityId(city: string): number | null {
   const r = db().prepare('SELECT ameex_id FROM ameex_cities WHERE canonical = ?').get(canon) as any;
   return r ? r.ameex_id : ameexIdFor(canon);
 }
+
+const localNow = () => { const d = new Date(); const z = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; };
+
+/** Confirmation queue: "send" = new orders; "reply" = waiting for an answer (+ callbacks that are due). */
+export function queue(wsId: number, lane: 'send' | 'reply', skip: number[] = []) {
+  const where = lane === 'send'
+    ? `status = 'new'`
+    : `(status IN ('message_sent','no_answer') OR (status = 'callback' AND callback_at IS NOT NULL AND callback_at <= @now))`;
+  const base = `FROM orders WHERE workspace_id = @ws AND ${where}`;
+  const p: Record<string, string | number> = lane === 'send' ? { ws: wsId } : { ws: wsId, now: localNow() }; // node:sqlite rejects unused named params
+  const count = (db().prepare(`SELECT COUNT(*) c ${base}`).get(p) as any).c as number;
+  const ids = skip.filter((n) => Number.isInteger(n));
+  const notSkipped = ids.length ? ` AND id NOT IN (${ids.join(',')})` : '';
+  const order = lane === 'send' ? 'id ASC' : 'status_changed_at ASC, id ASC';
+  const next = db().prepare(`SELECT *, (SELECT COUNT(*) FROM orders x WHERE x.workspace_id = orders.workspace_id AND x.phone = orders.phone AND x.id <> orders.id AND x.status IN ('cancelled','returned')) AS refusals ${base}${notSkipped} ORDER BY ${order} LIMIT 1`).get(p) as any;
+  return { count, next };
+}
+export const queueCounts = (wsId: number) => ({ send: queue(wsId, 'send').count, reply: queue(wsId, 'reply').count });
