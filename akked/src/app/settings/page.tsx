@@ -1,4 +1,4 @@
-import { requireSession } from '@/lib/auth';
+import { requireOwner } from '@/lib/auth';
 import { getT } from '@/lib/i18n';
 import { getWorkspace } from '@/lib/orders';
 import { DEFAULT_TEMPLATES } from '@/lib/templates';
@@ -7,7 +7,7 @@ import { saveAmeexCreds, saveTemplates, saveWhatsapp } from '../actions';
 export default async function Settings({ searchParams }: { searchParams: Promise<{ ameex?: string; wa?: string }> }) {
   const sp = await searchParams;
   const h = await headers(); const origin = `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`;
-  const me = await requireSession(); const { t } = await getT(); const ws = getWorkspace(me.workspaceId) as any;
+  const me = await requireOwner(); const { t } = await getT(); const ws = getWorkspace(me.workspaceId) as any;
   return (<><div className="card"><h1>{t.ameexTitle}</h1>
     {sp.ameex && <div className="ok">{sp.ameex === 'off' ? t.ameexOff : t.ameexSaved}</div>}
     {me.role === 'owner' ? <form action={saveAmeexCreds}><label>{t.ameexId}</label><input name="api_id" defaultValue={ws.ameex_api_id ?? ''} dir="ltr" autoComplete="off" />

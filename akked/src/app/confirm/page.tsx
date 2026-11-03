@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { requireSession } from '@/lib/auth';
 import { getT } from '@/lib/i18n';
 import { getWorkspace, queue, queueCounts } from '@/lib/orders';
-import { DEFAULT_TEMPLATES, renderTemplate, waLink } from '@/lib/templates';
+import { buildMessage, waLink } from '@/lib/templates';
+import Onboarding from '../onboarding';
 import { quickStatus, sendConfirmTemplate } from '../actions';
 import { waCreds } from '@/lib/inbox';
 import WaButton from './wa-button';
@@ -13,7 +14,7 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
   const lane = sp.lane === 'reply' ? 'reply' : 'send';
   const skip = (sp.skip ?? '').split(',').map(Number).filter(Boolean);
   const counts = queueCounts(me.workspaceId);
-  const { next: o } = queue(me.workspaceId, lane, skip);
+  const { next: o } = queue(me.workspaceId, lane, skip, me.userId);
   const ws = getWorkspace(me.workspaceId);
   const official = !!waCreds(me.workspaceId);
   const key = (['darija', 'ar', 'fr'].includes(sp.lang ?? '') ? sp.lang : 'darija') as 'darija' | 'ar' | 'fr';
@@ -24,12 +25,12 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
       <Link className={`btn ${lane === 'reply' ? '' : 'sec'}`} href="/confirm?lane=reply">{t.laneReply} ({counts.reply})</Link>
     </div>
     {sp.err && <div className="err" dir="auto">{(t as any)[sp.err] ?? sp.err}</div>}
-    {!o ? (
+    {!o ? (<>
+      <Onboarding wsId={me.workspaceId} t={t as any} />
       <div className="card" style={{ textAlign: 'center' }}><h1>{t.allDone}</h1>
         <p><Link className="btn" href="/orders/quick">+ {t.quickAdd}</Link></p></div>
-    ) : (() => {
-      const tpl = (ws as any)['template_' + key] || DEFAULT_TEMPLATES[key];
-      const msg = renderTemplate(tpl, { name: o.customer_name, product: [o.products, o.size, o.color].filter(Boolean).join(' '), price: o.price, city: o.city || '' });
+    </>) : (() => {
+      const msg = buildMessage((ws as any)['template_' + key], key, o, ws.name);
       return (<>
         <div className="card">
           <div className="top"><bdi className="nm" style={{ fontSize: 22 }}>{o.customer_name}</bdi><span className="price" dir="ltr" style={{ fontSize: 20 }}>{o.price} MAD</span></div>
@@ -38,7 +39,8 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
             {lane === 'reply' && <span className={`badge ${o.status}`}>{(t as any)['s_' + o.status]}</span>}
           </div>
           <p><a href={`tel:${o.phone}`} dir="ltr">📞 {o.phone}</a> · {o.city}</p>
-          {o.address && <p className="muted">{o.address}</p>}
+          {o.address ? <p className="muted">{o.address}</p> : <p><span className="badge bad">⚠ {t.addressMissing}</span></p>}
+          <p><Link href={`/orders/${o.id}/edit?back=${encodeURIComponent('/confirm?lane=' + lane)}`}>✏️ {t.editLabel}</Link></p>
           <p><bdi dir="auto">{o.quantity}× {o.products} {o.size} {o.color}</bdi></p>
           {o.callback_at && <p className="muted">⏰ {o.callback_at.replace('T', ' ')}</p>}
         </div>

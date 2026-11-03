@@ -22,6 +22,14 @@ Moroccan phone normalization · filters/search · wa.me WhatsApp with editable D
 - **Smart add** (`/orders/quick`): paste an order as received (WhatsApp/Instagram, Arabic/French/one-line or labelled, several at once) → name, phone, city (AMEEX spelling), address, product, price are detected; review and save.
 - **Confirmation mode** (`/confirm`): one order at a time. *To send* lane: big WhatsApp button, then the order moves on. *Awaiting reply* lane: ✅ Confirmed / ❌ Cancelled / 📵 No answer / ⏰ in 2h / tomorrow. Orders with earlier refusals show a warning.
 
+## Teams, accounts and safety
+- **Edit order** (`/orders/:id/edit`): name, phone, city (AMEEX list with suggestions), address, product, price… All edits are logged in the order history.
+- **Message variables:** `{name} {product} {price} {city} {address} {order_number} {size} {qty} {shop}`; a "send your address" line is added automatically when the address is missing.
+- **Roles:** agents can add/confirm/edit orders but cannot export the customer list, nor open dashboard, team, settings or billing (enforced on the server, not only hidden).
+- **No double work:** the order shown in confirmation mode is claimed for that agent for 10 minutes.
+- **Forgot password (no email needed):** a one-time **recovery code** is shown at signup (stored hashed, replaced after each use); owners can reset an agent's password (temporary password shown once); the platform admin can reset an owner's. Login/reset attempts are rate-limited (8 / 15 min).
+- **First run:** a 3-step checklist and a "5 demo orders" button.
+
 ## WhatsApp without any registration (default)
 The seller uses their own WhatsApp (phone or WhatsApp Web) — nothing to connect. On desktop **every send reuses one WhatsApp Web window** (put it side by side with Akked: `Win+←` / `Win+→`), on phones it uses wa.me. In the *awaiting reply* lane the agent can paste the customer's reply and get a one-tap confirm/cancel suggestion, or use keyboard shortcuts (C / X / N). No Meta account, company, or token needed.
 
@@ -44,7 +52,7 @@ Verify with one real parcel before relying on it. `AMEEX_BASE_URL` overrides the
 
 ## Known gaps before going public
 - AMEEX export now uses the real `AMEEX_MODELE.xlsx` (kept in `templates/`). Phone is written as national format (06...) as text; confirm AMEEX accepts this, and whether PRIX is the COD amount.
-- No native `.xlsx` import (paste cells or save as CSV). No password reset, email invites, or callback reminders yet.
+- No native `.xlsx` import (paste cells or save as CSV). No email invites or callback reminders yet.
 - WhatsApp inbox is tested against a mock of Meta's API only; verify with a real test number before selling. Embedded Signup (one-click connect) is not built; sellers paste the token for now. Polling (6 s) instead of push for the inbox.
 - Tenant isolation is enforced in application queries (every query filters by `workspace_id`), not by DB-level RLS. Moving to Postgres/Supabase should add RLS.
 - No login rate limiting; add before production. Use HTTPS (cookie is `secure` in production).

@@ -60,6 +60,10 @@ export function db(): Db {
   addCol('workspaces', 'ameex_api_key_enc', 'TEXT');
   addCol('orders', 'ameex_parcel_code', 'TEXT');
   addCol('orders', 'ameex_error', 'TEXT');
+  addCol('users', 'recovery_hash', 'TEXT');
+  addCol('orders', 'claimed_by', 'INTEGER');
+  addCol('orders', 'claimed_at', 'TEXT');
+  d.exec(`CREATE TABLE IF NOT EXISTS login_fails (key TEXT PRIMARY KEY, n INTEGER NOT NULL, first_at INTEGER NOT NULL)`);
   addCol('workspaces', 'wa_phone_number_id', 'TEXT');
   addCol('workspaces', 'wa_token_enc', 'TEXT');
   addCol('workspaces', 'wa_template_name', 'TEXT');

@@ -2,6 +2,7 @@ import { db } from './db';
 import { ameexIdFor, canonicalCity } from './cities';
 import { canAddOrders, PLANS, type PlanKey, type WorkspaceState } from './plans';
 import type { ParsedOrder } from './import';
+import { normalizePhone } from './phone';
 import type { ExportOrder } from './exporters';
 
 export interface Workspace extends WorkspaceState {
@@ -56,7 +57,7 @@ export function changeStatus(wsId: number, userId: number | null, id: number, st
   if (!o) return false;
   const d = db();
   d.transaction(() => {
-    d.prepare(`UPDATE orders SET status = ?, callback_at = ?, status_changed_at = CURRENT_TIMESTAMP, agent_id = COALESCE(agent_id, ?) WHERE id = ?`)
+    d.prepare(`UPDATE orders SET status = ?, callback_at = ?, status_changed_at = CURRENT_TIMESTAMP, agent_id = COALESCE(agent_id, ?), claimed_by = NULL, claimed_at = NULL WHERE id = ?`)
       .run(status, status === 'callback' ? callbackAt || null : null, userId, id);
     d.prepare('INSERT INTO order_events (order_id, user_id, from_status, to_status, note) VALUES (?,?,?,?,?)').run(id, userId, o.status, status, note ?? null);
   })();
@@ -108,8 +109,9 @@ export function ameexCityId(city: string): number | null {
 
 const localNow = () => { const d = new Date(); const z = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; };
 
-/** Confirmation queue: "send" = new orders; "reply" = waiting for an answer (+ callbacks that are due). */
-export function queue(wsId: number, lane: 'send' | 'reply', skip: number[] = []) {
+/** Confirmation queue: "send" = new orders; "reply" = waiting for an answer (+ callbacks that are due).
+ *  The order shown is claimed for `userId` for 10 minutes so two agents never work on the same one. */
+export function queue(wsId: number, lane: 'send' | 'reply', skip: number[] = [], userId: number | null = null) {
   const where = lane === 'send'
     ? `status = 'new'`
     : `(status IN ('message_sent','no_answer') OR (status = 'callback' AND callback_at IS NOT NULL AND callback_at <= @now))`;
@@ -118,8 +120,54 @@ export function queue(wsId: number, lane: 'send' | 'reply', skip: number[] = [])
   const count = (db().prepare(`SELECT COUNT(*) c ${base}`).get(p) as any).c as number;
   const ids = skip.filter((n) => Number.isInteger(n));
   const notSkipped = ids.length ? ` AND id NOT IN (${ids.join(',')})` : '';
+  const free = userId == null ? '' : ` AND (claimed_by IS NULL OR claimed_by = ${Number(userId)} OR claimed_at < datetime('now','-10 minutes'))`;
   const order = lane === 'send' ? 'id ASC' : 'status_changed_at ASC, id ASC';
-  const next = db().prepare(`SELECT *, (SELECT COUNT(*) FROM orders x WHERE x.workspace_id = orders.workspace_id AND x.phone = orders.phone AND x.id <> orders.id AND x.status IN ('cancelled','returned')) AS refusals ${base}${notSkipped} ORDER BY ${order} LIMIT 1`).get(p) as any;
+  const next = db().prepare(`SELECT *, (SELECT COUNT(*) FROM orders x WHERE x.workspace_id = orders.workspace_id AND x.phone = orders.phone AND x.id <> orders.id AND x.status IN ('cancelled','returned')) AS refusals ${base}${notSkipped}${free} ORDER BY ${order} LIMIT 1`).get(p) as any;
+  if (next && userId != null) {
+    db().prepare(`UPDATE orders SET claimed_by = NULL, claimed_at = NULL WHERE workspace_id = ? AND claimed_by = ? AND id <> ?`).run(wsId, userId, next.id);
+    db().prepare(`UPDATE orders SET claimed_by = ?, claimed_at = CURRENT_TIMESTAMP WHERE id = ?`).run(userId, next.id);
+  }
   return { count, next };
 }
 export const queueCounts = (wsId: number) => ({ send: queue(wsId, 'send').count, reply: queue(wsId, 'reply').count });
+
+export interface OrderEdit { customer_name: string; phone: string; city: string; address: string; products: string; size: string; color: string; quantity: number; price: number; notes: string }
+/** Edit an order (all roles). Normalises phone and city; records which fields changed in the order history. */
+export function updateOrder(wsId: number, userId: number | null, id: number, input: Partial<Record<keyof OrderEdit, string>>): { ok: boolean; error?: 'not_found' | 'phone' | 'name' } {
+  const o = getOrder(wsId, id); if (!o) return { ok: false, error: 'not_found' };
+  const phone = normalizePhone(input.phone ?? ''); if (!phone) return { ok: false, error: 'phone' };
+  const name = (input.customer_name ?? '').trim(); if (!name) return { ok: false, error: 'name' };
+  const city = (input.city ?? '').trim();
+  const next: OrderEdit = {
+    customer_name: name.slice(0, 120), phone, city: (canonicalCity(city) ?? city).slice(0, 80), address: (input.address ?? '').trim().slice(0, 300),
+    products: (input.products ?? '').trim().slice(0, 200), size: (input.size ?? '').trim().slice(0, 40), color: (input.color ?? '').trim().slice(0, 40),
+    quantity: Math.max(1, parseInt(input.quantity ?? '') || 1), price: parseFloat((input.price ?? '').replace(',', '.')) || 0, notes: (input.notes ?? '').trim().slice(0, 500),
+  };
+  const changed = (Object.keys(next) as (keyof OrderEdit)[]).filter((k) => String(o[k] ?? '') !== String(next[k]));
+  if (!changed.length) return { ok: true };
+  const d = db();
+  d.transaction(() => {
+    d.prepare(`UPDATE orders SET customer_name=?, phone=?, city=?, address=?, products=?, size=?, color=?, quantity=?, price=?, notes=? WHERE id=? AND workspace_id=?`)
+      .run(next.customer_name, next.phone, next.city, next.address, next.products, next.size, next.color, next.quantity, next.price, next.notes, id, wsId);
+    d.prepare('INSERT INTO order_events (order_id, user_id, from_status, to_status, note) VALUES (?,?,?,?,?)').run(id, userId, o.status, o.status, 'edit: ' + changed.join(','));
+  })();
+  return { ok: true };
+}
+
+/** Onboarding checklist state for the first-run card. */
+export function onboarding(wsId: number) {
+  const c = (sql: string) => (db().prepare(sql).get(wsId) as any).c as number;
+  const total = c(`SELECT COUNT(*) c FROM orders WHERE workspace_id = ?`);
+  const sent = c(`SELECT COUNT(*) c FROM orders WHERE workspace_id = ? AND status <> 'new'`);
+  const confirmed = c(`SELECT COUNT(*) c FROM orders WHERE workspace_id = ? AND status IN ('confirmed','shipped','delivered')`);
+  const steps = [total > 0, sent > 0, confirmed > 0];
+  return { total, steps, done: steps.every(Boolean), show: total < 15 && !steps.every(Boolean) };
+}
+
+export const DEMO_ORDERS: ParsedOrder[] = [
+  { customer_name: 'سارة العلوي', phone: '+212612345678', city: 'Casablanca', address: 'شارع الزرقطوني رقم 12', products: 'فستان', size: 'M', color: 'أسود', quantity: 1, price: 199, notes: '' },
+  { customer_name: 'Youssef Bennani', phone: '+212661223344', city: 'Fes', address: 'Hay Atlas rue 5', products: 'Veste', size: 'L', color: '', quantity: 1, price: 250, notes: '' },
+  { customer_name: 'هند', phone: '+212700112233', city: 'Marrakech', address: '', products: 'حقيبة', size: '', color: '', quantity: 1, price: 120, notes: '' },
+  { customer_name: 'Omar', phone: '+212655443322', city: 'Tanger', address: 'Av. Mohammed V n 40', products: 'Chemise', size: 'XL', color: 'Blanc', quantity: 2, price: 180, notes: '' },
+  { customer_name: 'فاطمة', phone: '+212677889900', city: 'Rabat', address: 'حي الرياض', products: 'قفطان', size: '', color: '', quantity: 1, price: 350, notes: '' },
+];

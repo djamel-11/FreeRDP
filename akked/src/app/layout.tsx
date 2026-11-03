@@ -20,9 +20,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Link href="/confirm">{t.confirmNav}</Link>
             <Link href="/inbox">{t.inboxNav}</Link>
             <Link href="/orders">{t.orders}</Link>
-            <Link href="/dashboard">{t.dashboard}</Link>
-            <Link href="/team">{t.team}</Link>
-            <Link href="/settings">{t.settings}</Link>
+            {(me.role === 'owner' || me.isAdmin) && <>
+              <Link href="/dashboard">{t.dashboard}</Link>
+              <Link href="/team">{t.team}</Link>
+              <Link href="/settings">{t.settings}</Link>
+            </>}
             {me.isAdmin && <Link href="/admin">{t.admin}</Link>}
           </>}
           <span className="sp" />

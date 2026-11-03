@@ -1,8 +1,9 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireSession } from '@/lib/auth';
 import { getT, STATUSES } from '@/lib/i18n';
 import { customerHistory, getOrder, getWorkspace } from '@/lib/orders';
-import { DEFAULT_TEMPLATES, renderTemplate, waLink } from '@/lib/templates';
+import { buildMessage, waLink } from '@/lib/templates';
 import { sendToAmeex, sendWhatsapp, updateStatus } from '../../actions';
 
 export default async function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ lang?: string; ameex?: string }> }) {
@@ -13,10 +14,10 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const hist = customerHistory(me.workspaceId, o.phone, o.id);
   const refused = hist.filter((h) => ['cancelled', 'returned'].includes(h.status)).length;
   const key = (['darija', 'ar', 'fr'].includes(lang ?? '') ? lang : 'darija') as 'darija' | 'ar' | 'fr';
-  const tpl = (ws as any)['template_' + key] || DEFAULT_TEMPLATES[key];
-  const msg = renderTemplate(tpl, { name: o.customer_name, product: [o.products, o.size, o.color].filter(Boolean).join(' '), price: o.price, city: o.city || '' });
+  const msg = buildMessage((ws as any)['template_' + key], key, o, ws.name);
   return (<>
     <div className="card">
+      <p style={{ textAlign: 'end' }}><Link className="btn sec" href={`/orders/${o.id}/edit`}>✏️ {t.editLabel}</Link></p>
       <h1><bdi>{o.customer_name}</bdi> <span className={`badge ${o.status}`}>{(t as any)['s_' + o.status]}</span></h1>
       {refused > 0 && <div className="err">⚠ {t.refusedBefore} ×{refused}</div>}
       <p dir="ltr" style={{ textAlign: 'start' }}>{o.phone} · {o.city} · {o.address}</p>

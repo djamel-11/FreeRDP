@@ -6,28 +6,21 @@ import { TRIAL_DAYS } from './plans';
 
 export interface Session { userId: number; workspaceId: number; role: string; isAdmin: boolean; fullName: string; email: string }
 
-export function hashPassword(pw: string): string {
-  const salt = crypto.randomBytes(16).toString('hex');
-  return salt + ':' + crypto.scryptSync(pw, salt, 64).toString('hex');
-}
-export function verifyPassword(pw: string, stored: string): boolean {
-  const [salt, hash] = stored.split(':');
-  const h = crypto.scryptSync(pw, salt, 64);
-  const s = Buffer.from(hash, 'hex');
-  return s.length === h.length && crypto.timingSafeEqual(h, s);
-}
+export { hashPassword, verifyPassword } from './password';
+import { hashPassword, generateRecoveryCode, normalizeRecoveryCode } from './password';
 
-export function createWorkspaceWithOwner(name: string, email: string, fullName: string, pw: string): number {
+export function createWorkspaceWithOwner(name: string, email: string, fullName: string, pw: string): { userId: number; recoveryCode: string } {
+  const recoveryCode = generateRecoveryCode();
   const d = db();
   const tx = d.transaction(() => {
     const end = new Date(Date.now() + TRIAL_DAYS * 864e5).toISOString();
     const ws = d.prepare(`INSERT INTO workspaces (name, plan, status, period_end) VALUES (?, 'trial', 'trial', ?)`).run(name, end);
     const isAdmin = process.env.ADMIN_EMAIL && process.env.ADMIN_EMAIL.toLowerCase() === email.toLowerCase() ? 1 : 0;
-    const u = d.prepare(`INSERT INTO users (workspace_id, email, full_name, password_hash, role, is_admin) VALUES (?,?,?,?, 'owner', ?)`)
-      .run(ws.lastInsertRowid, email.toLowerCase(), fullName, hashPassword(pw), isAdmin);
+    const u = d.prepare(`INSERT INTO users (workspace_id, email, full_name, password_hash, role, is_admin, recovery_hash) VALUES (?,?,?,?, 'owner', ?, ?)`)
+      .run(ws.lastInsertRowid, email.toLowerCase(), fullName, hashPassword(pw), isAdmin, hashPassword(normalizeRecoveryCode(recoveryCode)));
     return Number(u.lastInsertRowid);
   });
-  return tx();
+  return { userId: tx(), recoveryCode };
 }
 
 export async function startSession(userId: number) {
@@ -53,5 +46,12 @@ export async function requireSession(): Promise<Session> {
 export async function requireAdmin(): Promise<Session> {
   const s = await requireSession();
   if (!s.isAdmin) redirect('/orders');
+  return s;
+}
+
+/** Owner-only pages (agents are redirected). Platform admins pass too. */
+export async function requireOwner(): Promise<Session> {
+  const s = await requireSession();
+  if (s.role !== 'owner' && !s.isAdmin) redirect('/orders');
   return s;
 }

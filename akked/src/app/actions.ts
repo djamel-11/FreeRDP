@@ -3,10 +3,12 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
-import { createWorkspaceWithOwner, hashPassword, requireAdmin, requireSession, startSession, verifyPassword } from '@/lib/auth';
+import { createWorkspaceWithOwner, requireAdmin, requireOwner, requireSession, startSession } from '@/lib/auth';
+import { hashPassword, verifyPassword, normalizeRecoveryCode, tempPassword, generateRecoveryCode } from '@/lib/password';
+import { clearFails, recordFail, tooMany } from '@/lib/ratelimit';
 import { normalizePhone } from '@/lib/phone';
 import { parseOrders } from '@/lib/import';
-import { ameexCityId, changeStatus, createOrders, getOrder, getWorkspace, teamMembers } from '@/lib/orders';
+import { ameexCityId, changeStatus, createOrders, DEMO_ORDERS, getOrder, getWorkspace, teamMembers, updateOrder } from '@/lib/orders';
 import { PLANS, type PlanKey } from '@/lib/plans';
 import { STATUSES } from '@/lib/i18n';
 import { canonicalCity } from '@/lib/cities';
@@ -22,20 +24,66 @@ export async function setLang(lang: string) {
   revalidatePath('/', 'layout');
 }
 
+const flash = async (name: string, value: string) => (await cookies()).set(name, value, { httpOnly: true, sameSite: 'strict', path: '/', maxAge: 600, secure: process.env.NODE_ENV === 'production' });
+
 export async function signup(f: FormData) {
   const email = s(f, 'email').toLowerCase(), pw = s(f, 'password');
   if (!email.includes('@') || pw.length < 8 || !s(f, 'store')) redirect('/signup?error=invalid');
   if (db().prepare('SELECT 1 FROM users WHERE email = ?').get(email)) redirect('/signup?error=exists');
-  const uid = createWorkspaceWithOwner(s(f, 'store'), email, s(f, 'name'), pw);
-  await startSession(uid);
-  redirect('/orders');
+  const { userId, recoveryCode } = createWorkspaceWithOwner(s(f, 'store'), email, s(f, 'name'), pw);
+  await startSession(userId);
+  await flash('akked_flash', recoveryCode);
+  redirect('/welcome');
 }
 
 export async function login(f: FormData) {
-  const u = db().prepare('SELECT * FROM users WHERE email = ?').get(s(f, 'email').toLowerCase()) as any;
-  if (!u || !verifyPassword(s(f, 'password'), u.password_hash)) redirect('/login?error=1');
+  const email = s(f, 'email').toLowerCase(); const key = 'login:' + email;
+  if (tooMany(key)) redirect('/login?error=locked');
+  const u = db().prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+  if (!u || !verifyPassword(s(f, 'password'), u.password_hash)) { recordFail(key); redirect('/login?error=1'); }
+  clearFails(key);
   await startSession(u.id);
   redirect('/confirm');
+}
+
+/** Forgot password without email: the one-time recovery code shown at signup. A new code is issued after use. */
+export async function resetPassword(f: FormData) {
+  const email = s(f, 'email').toLowerCase(); const key = 'reset:' + email;
+  const pw = s(f, 'password');
+  if (tooMany(key, 5)) redirect('/reset?error=locked');
+  if (pw.length < 8) redirect('/reset?error=short');
+  const u = db().prepare('SELECT id, recovery_hash FROM users WHERE email = ?').get(email) as any;
+  if (!u?.recovery_hash || !verifyPassword(normalizeRecoveryCode(s(f, 'code')), u.recovery_hash)) { recordFail(key); redirect('/reset?error=1'); }
+  clearFails(key); clearFails('login:' + email);
+  const code = generateRecoveryCode();
+  db().prepare('UPDATE users SET password_hash = ?, recovery_hash = ? WHERE id = ?').run(hashPassword(pw), hashPassword(normalizeRecoveryCode(code)), u.id);
+  db().prepare('DELETE FROM sessions WHERE user_id = ?').run(u.id);
+  await startSession(u.id);
+  await flash('akked_flash', code);
+  redirect('/welcome');
+}
+
+/** Owner resets an agent's password: a temporary one is shown once. */
+export async function resetAgentPassword(userId: number, _fd?: FormData) {
+  const me = await requireOwner();
+  const u = db().prepare('SELECT id, email, role FROM users WHERE id = ? AND workspace_id = ?').get(userId, me.workspaceId) as any;
+  if (!u || u.role !== 'agent') redirect('/team');
+  const pw = tempPassword();
+  db().prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(pw), u.id);
+  db().prepare('DELETE FROM sessions WHERE user_id = ?').run(u.id);
+  await flash('akked_tmp', `${u.email}|${pw}`);
+  redirect('/team');
+}
+
+export async function adminResetOwnerPassword(workspaceId: number, _fd?: FormData) {
+  await requireAdmin();
+  const u = db().prepare(`SELECT id, email FROM users WHERE workspace_id = ? AND role = 'owner' LIMIT 1`).get(workspaceId) as any;
+  if (!u) redirect('/admin');
+  const pw = tempPassword();
+  db().prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(pw), u.id);
+  db().prepare('DELETE FROM sessions WHERE user_id = ?').run(u.id);
+  await flash('akked_tmp', `${u.email}|${pw}`);
+  redirect('/admin');
 }
 
 export async function logout() {
@@ -95,7 +143,7 @@ export async function sendWhatsapp(f: FormData) {
 }
 
 export async function saveTemplates(f: FormData) {
-  const me = await requireSession();
+  const me = await requireOwner();
   db().prepare('UPDATE workspaces SET template_darija=?, template_ar=?, template_fr=? WHERE id=?')
     .run(s(f, 'darija'), s(f, 'ar'), s(f, 'fr'), me.workspaceId);
   revalidatePath('/settings');
@@ -278,4 +326,20 @@ export async function listStatus(id: number, status: string, back: string, _fd?:
   if (['confirmed', 'cancelled', 'no_answer'].includes(status)) changeStatus(me.workspaceId, me.userId, id, status);
   revalidatePath('/orders');
   redirect(back.startsWith('/orders') ? back : '/orders');
+}
+
+/** Edit an order (bound with the order id). */
+export async function updateOrderAction(id: number, f: FormData) {
+  const me = await requireSession();
+  const r = updateOrder(me.workspaceId, me.userId, id, Object.fromEntries(['customer_name', 'phone', 'city', 'address', 'products', 'size', 'color', 'quantity', 'price', 'notes'].map((k) => [k, s(f, k)])));
+  if (!r.ok) redirect(`/orders/${id}/edit?error=${r.error}`);
+  revalidatePath('/orders');
+  redirect(s(f, 'back').startsWith('/') ? s(f, 'back') : `/orders/${id}`);
+}
+
+/** First-run helper: five sample orders so a new seller can try the flow immediately. */
+export async function createDemoOrders() {
+  const me = await requireSession();
+  createOrders(me.workspaceId, me.userId, DEMO_ORDERS, 'demo');
+  redirect('/confirm');
 }

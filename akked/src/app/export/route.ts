@@ -6,6 +6,7 @@ import { exportableOrders } from '@/lib/orders';
 export async function GET(req: Request) {
   const me = await getSession();
   if (!me) return new Response('Unauthorized', { status: 401 });
+  if (me.role !== 'owner') return new Response('Forbidden', { status: 403 }); // agents cannot download the customer list
   const key = new URL(req.url).searchParams.get('format') ?? 'generic';
   const fmt = FORMATS[key];
   if (!fmt) return new Response('Unknown format', { status: 400 });

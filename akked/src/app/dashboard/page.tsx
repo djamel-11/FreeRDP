@@ -1,8 +1,8 @@
-import { requireSession } from '@/lib/auth';
+import { requireOwner } from '@/lib/auth';
 import { getT } from '@/lib/i18n';
 import { stats } from '@/lib/orders';
 export default async function Dashboard() {
-  const me = await requireSession(); const { t } = await getT(); const s = stats(me.workspaceId);
+  const me = await requireOwner(); const { t } = await getT(); const s = stats(me.workspaceId);
   const max = Math.max(1, ...s.perDay.map((d) => d.c)); const maxC = Math.max(1, ...s.cities.map((d) => d.c));
   const pct = (n: number) => Math.round(n * 100) + '%';
   return (<><h1>{t.dashboard}</h1>
