@@ -21,7 +21,7 @@ Moroccan phone normalization · filters/search · wa.me WhatsApp with editable D
 ## AMEEX API integration
 Settings → AMEEX: each seller enters their own **API ID + API Key** (key stored AES-256-GCM encrypted; set `AKKED_SECRET` in production).
 A confirmed order gets a **Send to AMEEX** button (`Add Parcel`, status becomes Shipped, parcel code saved).
-AMEEX needs a numeric **city id**: the admin pastes `id,name` lines under `/admin` (names are matched to `src/lib/cities.ts`).
+AMEEX needs a numeric **city id**: the official AMEEX list (604 ids, `src/lib/ameex-cities.ts`) is built in and is the canonical spelling; our aliases (Arabic/Darija/typos) in `src/lib/cities.ts` map onto it. `/admin` can still override ids (`id,name` lines). The list was copied from the AMEEX dashboard; re-copy if AMEEX adds cities.
 The public docs don't show response bodies or a cities endpoint, so the parcel-code parsing is best-effort (raw response kept in `ameex_error`).
 Verify with one real parcel before relying on it. `AMEEX_BASE_URL` overrides the host for tests only.
 

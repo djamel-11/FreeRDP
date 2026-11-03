@@ -1,3 +1,4 @@
+import { AMEEX_CITIES } from './ameex-cities';
 /**
  * Canonical city names used in delivery-company files.
  * NOTE: default list uses common French spellings. Replace/extend with the official AMEEX list
@@ -36,7 +37,7 @@ export const CITIES: { name: string; aliases?: string[] }[] = [
   { name: 'Laâyoune', aliases: ['laayoune', 'layoune', 'العيون'] },
   { name: 'Dakhla', aliases: ['الداخلة'] },
   { name: 'Taroudant', aliases: ['تارودانت'] },
-  { name: 'Inezgane', aliases: ['إنزكان', 'انزكان'] },
+  { name: 'Inezgane', aliases: ['inzegane', 'إنزكان', 'انزكان'] },
   { name: 'Aït Melloul', aliases: ['ait melloul', 'أيت ملول', 'ايت ملول'] },
   { name: 'Tiznit', aliases: ['تيزنيت'] },
   { name: 'Berkane', aliases: ['بركان'] },
@@ -46,9 +47,9 @@ export const CITIES: { name: string; aliases?: string[] }[] = [
   { name: 'Martil', aliases: ['مرتيل'] },
   { name: 'Chefchaouen', aliases: ['chaouen', 'شفشاون'] },
   { name: 'Ifrane', aliases: ['إفران', 'افران'] },
-  { name: 'Azrou', aliases: ['أزرو', 'ازرو'] },
+  { name: 'Azrou', aliases: ['azrou(reg meknes)', 'أزرو', 'ازرو'] },
   { name: 'Sidi Kacem', aliases: ['سيدي قاسم'] },
-  { name: 'Sidi Slimane', aliases: ['سيدي سليمان'] },
+  { name: 'Sidi Slimane', aliases: ['sidi sliman (reg kacem)', 'سيدي سليمان'] },
   { name: 'Youssoufia', aliases: ['اليوسفية'] },
   { name: 'Ben Guerir', aliases: ['benguerir', 'بن جرير'] },
   { name: 'Fquih Ben Salah', aliases: ['الفقيه بن صالح'] },
@@ -59,16 +60,16 @@ export const CITIES: { name: string; aliases?: string[] }[] = [
   { name: 'Oued Zem', aliases: ['وادي زم'] },
   { name: 'Skhirat', aliases: ['الصخيرات'] },
   { name: 'Bouznika', aliases: ['بوزنيقة'] },
-  { name: 'Benslimane', aliases: ['بنسليمان'] },
+  { name: 'Benslimane', aliases: ['benslimane ( reg mohamedia)', 'بنسليمان'] },
   { name: 'Asilah', aliases: ['arzila', 'أصيلة', 'اصيلة'] },
   { name: 'Sefrou', aliases: ['صفرو'] },
   { name: 'Guercif', aliases: ['جرسيف'] },
-  { name: 'Kelaat Sraghna', aliases: ['kalaat sraghna', 'قلعة السراغنة'] },
+  { name: 'Kelaat Sraghna', aliases: ['el kelaa des sraghna', 'kelaa des sraghna', 'kalaat sraghna', 'قلعة السراغنة'] },
   { name: 'Khénifra', aliases: ['khenifra', 'خنيفرة'] },
   { name: 'Sidi Bennour', aliases: ['سيدي بنور'] },
-  { name: 'Souk El Arbaa', aliases: ['سوق أربعاء الغرب', 'سوق اربعاء الغرب'] },
+  { name: 'Souk El Arbaa', aliases: ['souk elarbaa du gharb', 'souk elarbaa', 'سوق أربعاء الغرب', 'سوق اربعاء الغرب'] },
   { name: 'Tan-Tan', aliases: ['tantan', 'طانطان'] },
-  { name: 'Smara', aliases: ['السمارة'] },
+  { name: 'Smara', aliases: ['essmara', 'السمارة'] },
 ];
 
 const norm = (s: string) =>
@@ -77,8 +78,26 @@ const norm = (s: string) =>
     .replace(/[’'`´-]/g, ' ').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
 const squash = (s: string) => norm(s).replace(/ /g, '');
 
+/** AMEEX's own spelling is authoritative: key → {id, name} (first id wins for duplicate names). */
+const AMEEX_BY_KEY = new Map<string, { id: number; name: string }>();
+for (const c of AMEEX_CITIES) if (!AMEEX_BY_KEY.has(squash(c.name))) AMEEX_BY_KEY.set(squash(c.name), c);
+
+/** key → canonical name. Our aliases map onto the AMEEX spelling when AMEEX has the city. */
 const INDEX = new Map<string, string>();
-for (const c of CITIES) for (const k of [c.name, ...(c.aliases ?? [])]) INDEX.set(squash(k), c.name);
+for (const c of CITIES) {
+  const keys = [c.name, ...(c.aliases ?? [])];
+  const fuzzy = (k: string) => {
+    const s = squash(k); if (s.length < 5) return undefined;
+    const m = [...AMEEX_BY_KEY].filter(([a]) => a.length >= 5 && lev1(s, a));
+    return m.length === 1 ? m[0][1] : undefined; // only when unambiguous
+  };
+  const hit = keys.map((k) => AMEEX_BY_KEY.get(squash(k))).find(Boolean) ?? keys.map(fuzzy).find(Boolean);
+  for (const k of keys) INDEX.set(squash(k), hit?.name ?? c.name);
+}
+for (const [k, c] of AMEEX_BY_KEY) if (!INDEX.has(k)) INDEX.set(k, c.name);
+
+/** AMEEX numeric city id for a canonical name, or null if AMEEX doesn't list it. */
+export const ameexIdFor = (name: string | null): number | null => (name ? AMEEX_BY_KEY.get(squash(name))?.id ?? null : null);
 
 function lev1(a: string, b: string): boolean {
   if (Math.abs(a.length - b.length) > 1) return false;

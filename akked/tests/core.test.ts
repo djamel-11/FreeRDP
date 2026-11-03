@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { normalizePhone } from '../src/lib/phone';
 import { renderTemplate, waLink } from '../src/lib/templates';
 import { canAddOrders } from '../src/lib/plans';
-import { canonicalCity } from '../src/lib/cities';
+import { ameexIdFor, canonicalCity } from '../src/lib/cities';
 import { parseOrders } from '../src/lib/import';
 import { FORMATS, toCsv, toXlsx } from '../src/lib/exporters';
 
@@ -56,16 +56,22 @@ describe('import/export', () => {
 });
 
 describe('cities', () => {
-  it('canonicalizes spellings', () => {
+  it('canonicalizes to the AMEEX spelling and finds ids', () => {
     expect(canonicalCity('casa')).toBe('Casablanca');
     expect(canonicalCity('  الدار البيضاء ')).toBe('Casablanca');
-    expect(canonicalCity('FES')).toBe('Fès');
-    expect(canonicalCity('فاس')).toBe('Fès');
-    expect(canonicalCity('kenitra')).toBe('Kénitra');
+    expect(canonicalCity('FÈS')).toBe('Fes');
+    expect(canonicalCity('فاس')).toBe('Fes');
+    expect(canonicalCity('Kénitra')).toBe('Kenitra');
     expect(canonicalCity('Marakech')).toBe('Marrakech');
-    expect(canonicalCity('Tetouane')).toBe('Tétouan');
+    expect(canonicalCity('Tetouane')).toBe('Tetouan');
+    expect(canonicalCity('Berrechid')).toBe('Berrchid');
     expect(canonicalCity('Atlantis')).toBeNull();
     expect(canonicalCity('')).toBeNull();
+    const ids = Object.fromEntries(['Casablanca', 'Rabat', 'Marrakech', 'Tanger', 'Fes', 'Agadir', 'Kenitra', 'Sale'].map((n) => [n, ameexIdFor(n)]));
+    expect(ids).toEqual({ Casablanca: 129, Rabat: 49, Marrakech: 1, Tanger: 98, Fes: 69, Agadir: 63, Kenitra: 33, Sale: 50 });
+    expect(ameexIdFor('Atlantis')).toBeNull();
+    for (const c of ['Azrou', 'Sidi Slimane', 'Benslimane', 'Larache', 'Ouarzazate', 'Taroudant']) expect(ameexIdFor(canonicalCity(c))).not.toBeNull();
+    expect(ameexIdFor(canonicalCity('Taroudant'))).toBe(102);
   });
 });
 
