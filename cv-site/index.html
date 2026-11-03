@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>سيرتي - سيرة ذاتية بصفحة واحدة بدون تسجيل</title>
+<title>سيرة مجانًا - أنشئ سيرتك الذاتية مجانًا بدون تسجيل | Free CV</title>
+<meta name="description" content="أنشئ سيرة ذاتية احترافية مجانًا في دقائق وحمّلها PDF. بدون تسجيل وبدون علامة مائية، وبياناتك لا تغادر جهازك.">
 <style>
 :root{--acc:#2563eb;--bg:#f3f4f6;--card:#fff;--fg:#111827;--mut:#6b7280;--bd:#d1d5db}
 *{box-sizing:border-box}
@@ -45,8 +46,8 @@ button.add{margin-top:8px;border:1px dashed var(--acc);color:var(--acc);backgrou
 <body>
 <div class="app">
   <section class="panel" id="form">
-    <h1>سيرتي</h1>
-    <p class="sub">سيرة ذاتية بصفحة واحدة <span class="badge">بياناتك لا تغادر جهازك</span></p>
+    <h1>سيرة مجانًا <small style="font-weight:400;color:var(--mut);font-size:.8rem">Free CV</small></h1>
+    <p class="sub">أنشئ سيرتك الذاتية مجانًا بصفحة واحدة، بدون تسجيل وبدون علامة مائية.<br><span class="badge">مجاني 100% · بياناتك لا تغادر جهازك</span></p>
 
     <div class="row">
       <div><label>اللغة / الاتجاه</label>
@@ -140,7 +141,7 @@ function renderSheet(){
     ${block('edu', state.edu, e => `<div class="e"><b>${esc(e.degree)}</b>${e.org?' — '+esc(e.org):''}<div class="d">${esc(e.period)}</div></div>`)}
     ${v('skills') ? `<h3>${L.sk}</h3><div class="skills">${v('skills').split(/[,،\n]/).map(s=>s.trim()).filter(Boolean).map(s=>`<span>${esc(s)}</span>`).join('')}</div>` : ''}
     ${v('langs') ? `<h3>${L.lg}</h3><p>${esc(v('langs'))}</p>` : ''}`;
-  document.title = v('name') ? 'السيرة الذاتية - ' + v('name') : 'سيرتي';
+  document.title = v('name') ? 'السيرة الذاتية - ' + v('name') : 'سيرة مجانًا';
 }
 function refresh(){ renderSheet(); save(); }
 
