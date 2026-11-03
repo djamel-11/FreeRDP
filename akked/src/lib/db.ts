@@ -60,6 +60,17 @@ export function db(): Db {
   addCol('workspaces', 'ameex_api_key_enc', 'TEXT');
   addCol('orders', 'ameex_parcel_code', 'TEXT');
   addCol('orders', 'ameex_error', 'TEXT');
+  addCol('workspaces', 'wa_phone_number_id', 'TEXT');
+  addCol('workspaces', 'wa_token_enc', 'TEXT');
+  addCol('workspaces', 'wa_template_name', 'TEXT');
+  addCol('workspaces', 'wa_template_lang', 'TEXT');
+  d.exec(`CREATE TABLE IF NOT EXISTS wa_messages (
+    id INTEGER PRIMARY KEY, workspace_id INTEGER NOT NULL REFERENCES workspaces(id), wa_id TEXT, phone TEXT NOT NULL,
+    direction TEXT NOT NULL, type TEXT, body TEXT, status TEXT, order_id INTEGER, created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_wa_msg_uid ON wa_messages(workspace_id, wa_id);
+  CREATE INDEX IF NOT EXISTS idx_wa_msg_phone ON wa_messages(workspace_id, phone, id);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_ws_pnid ON workspaces(wa_phone_number_id) WHERE wa_phone_number_id IS NOT NULL;`);
   d.exec(`CREATE TABLE IF NOT EXISTS ameex_cities (canonical TEXT PRIMARY KEY, ameex_id INTEGER NOT NULL)`);
   g.__akkedDb = d;
   return d;

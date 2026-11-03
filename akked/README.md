@@ -22,6 +22,16 @@ Moroccan phone normalization · filters/search · wa.me WhatsApp with editable D
 - **Smart add** (`/orders/quick`): paste an order as received (WhatsApp/Instagram, Arabic/French/one-line or labelled, several at once) → name, phone, city (AMEEX spelling), address, product, price are detected; review and save.
 - **Confirmation mode** (`/confirm`): one order at a time. *To send* lane: big WhatsApp button, then the order moves on. *Awaiting reply* lane: ✅ Confirmed / ❌ Cancelled / 📵 No answer / ⏰ in 2h / tomorrow. Orders with earlier refusals show a warning.
 
+## WhatsApp inbox (official Cloud API)
+Sellers connect their own number (Settings → WhatsApp: **Phone number ID**, **Access token**, approved **template name/language**; token stored encrypted).
+- **Send official** in confirmation mode sends the approved template (`{{1}}` name, `{{2}}` product, `{{3}}` price, `{{4}}` city) and moves the order on.
+- **Inbox** (`/inbox`): every customer reply appears live; reply in free text within 24 h of their last message (WhatsApp rule), otherwise send the template.
+- **Auto-confirm:** short replies (نعم / oui / ok / 1 → confirmed; لا / non / annuler / 2 → cancelled), including taps on template quick-reply buttons, update the customer's open order. Longer messages stay for a human.
+- Webhook: `POST/GET /api/whatsapp/webhook` (HMAC `X-Hub-Signature-256` verified; duplicates ignored). Env: `WA_APP_SECRET` (Meta app secret), `WA_VERIFY_TOKEN` (any string you also type in Meta's webhook settings), optional `WA_GRAPH_VERSION` (default `v25.0`).
+- Needs a **public HTTPS URL** for Meta to reach the webhook (deploy, or a tunnel such as cloudflared/ngrok for local tests).
+
+Meta setup (platform owner, once): create a Meta app + WhatsApp product, verify the business, create a **utility template** (body with `{{1}}..{{4}}` plus quick-reply buttons "نعم، أؤكد" / "لا، ألغِ"), subscribe the webhook to the `messages` field. Per seller: either their own app token for the test, or Embedded Signup (incl. *Coexistence*, which keeps the number on the WhatsApp Business app and links it by QR) once you are an approved Tech Provider — not built yet. Meta bills API messages (templates; service messages beyond the free monthly allowance).
+
 ## AMEEX API integration
 Settings → AMEEX: each seller enters their own **API ID + API Key** (key stored AES-256-GCM encrypted; set `AKKED_SECRET` in production).
 A confirmed order gets a **Send to AMEEX** button (`Add Parcel`, status becomes Shipped, parcel code saved).
@@ -32,6 +42,7 @@ Verify with one real parcel before relying on it. `AMEEX_BASE_URL` overrides the
 ## Known gaps before going public
 - AMEEX export now uses the real `AMEEX_MODELE.xlsx` (kept in `templates/`). Phone is written as national format (06...) as text; confirm AMEEX accepts this, and whether PRIX is the COD amount.
 - No native `.xlsx` import (paste cells or save as CSV). No password reset, email invites, or callback reminders yet.
+- WhatsApp inbox is tested against a mock of Meta's API only; verify with a real test number before selling. Embedded Signup (one-click connect) is not built; sellers paste the token for now. Polling (6 s) instead of push for the inbox.
 - Tenant isolation is enforced in application queries (every query filters by `workspace_id`), not by DB-level RLS. Moving to Postgres/Supabase should add RLS.
 - No login rate limiting; add before production. Use HTTPS (cookie is `secure` in production).
 - Darija texts need native review. CNDP / law 09-08: add privacy page, data export/deletion tools, and file your declaration.

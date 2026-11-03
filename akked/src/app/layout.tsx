@@ -18,6 +18,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <strong style={{ padding: '0 8px' }}>{t.appName}</strong>
           {me && <>
             <Link href="/confirm">{t.confirmNav}</Link>
+            <Link href="/inbox">{t.inboxNav}</Link>
             <Link href="/orders">{t.orders}</Link>
             <Link href="/dashboard">{t.dashboard}</Link>
             <Link href="/team">{t.team}</Link>

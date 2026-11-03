@@ -135,3 +135,43 @@ describe('free text orders', () => {
     expect(r[0]).toMatchObject({ customer_name: 'سارة', city: 'Casablanca', price: '199' });
   });
 });
+
+import crypto from 'node:crypto';
+import { classifyReply, parseWebhook, sendTemplate, sendText, verifySignature } from '../src/lib/whatsapp';
+describe('whatsapp cloud api', () => {
+  it('classifies short replies', () => {
+    for (const t of ['1', 'نعم', ' Oui! ', 'OK', 'واخا', 'نعم، أؤكد', 'Confirmer']) expect(classifyReply(t)).toBe('confirm');
+    for (const t of ['2', 'لا', 'Non', 'annuler', 'لا، ألغِ', 'بغيتش']) expect(classifyReply(t)).toBe('cancel');
+    for (const t of ['', 'واش ممكن نبدل المقاس؟', 'شحال التوصيل', 'ok but call me later please thanks']) expect(classifyReply(t)).toBeNull();
+  });
+  it('verifies signatures', () => {
+    const body = '{"a":1}'; const sig = 'sha256=' + crypto.createHmac('sha256', 'sec').update(body).digest('hex');
+    expect(verifySignature(body, sig, 'sec')).toBe(true);
+    expect(verifySignature(body + ' ', sig, 'sec')).toBe(false);
+    expect(verifySignature(body, null, 'sec')).toBe(false);
+    expect(verifySignature(body, 'sha256=zz', 'sec')).toBe(false);
+    expect(verifySignature(body, sig, '')).toBe(false);
+  });
+  it('parses text and button webhooks', () => {
+    const payload = { object: 'whatsapp_business_account', entry: [{ changes: [{ field: 'messages', value: { metadata: { phone_number_id: '106' }, contacts: [{ wa_id: '212612345678', profile: { name: 'Sara' } }],
+      messages: [{ id: 'w1', from: '212612345678', type: 'text', text: { body: 'نعم' } }, { id: 'w2', from: '212612345678', type: 'button', button: { payload: 'Yes', text: 'نعم، أؤكد' } }],
+      statuses: [{ id: 'w0', status: 'delivered' }] } }] }] };
+    const r = parseWebhook(payload);
+    expect(r.inbound.map((m) => m.body)).toEqual(['نعم', 'نعم، أؤكد']);
+    expect(r.inbound[0]).toMatchObject({ name: 'Sara', phoneNumberId: '106' });
+    expect(r.statuses).toEqual([{ waId: 'w0', status: 'delivered', phoneNumberId: '106' }]);
+    expect(parseWebhook({ object: 'page' })).toEqual({ inbound: [], statuses: [] });
+  });
+  it('sends text and templates in Meta format', async () => {
+    let seen: any;
+    const fake = (async (url: string, init: any) => { seen = { url, init, body: JSON.parse(init.body) }; return new Response(JSON.stringify({ messages: [{ id: 'wamid.X' }] }), { status: 200 }); }) as any;
+    const r = await sendTemplate({ phoneNumberId: '106', token: 'T' }, '+212612345678', 'order_confirmation', 'ar', ['Sara', 'Robe', '199', 'Casablanca'], fake);
+    expect(r).toEqual({ ok: true, id: 'wamid.X' });
+    expect(seen.url).toMatch(/\/106\/messages$/); expect(seen.init.headers.Authorization).toBe('Bearer T');
+    expect(seen.body).toMatchObject({ messaging_product: 'whatsapp', to: '212612345678', type: 'template', template: { name: 'order_confirmation', language: { code: 'ar' }, components: [{ type: 'body', parameters: [{ type: 'text', text: 'Sara' }, { type: 'text', text: 'Robe' }, { type: 'text', text: '199' }, { type: 'text', text: 'Casablanca' }] }] } });
+    await sendText({ phoneNumberId: '106', token: 'T' }, '+212612345678', 'hi', fake);
+    expect(seen.body).toMatchObject({ type: 'text', to: '212612345678', text: { body: 'hi' } });
+    const bad = (async () => new Response(JSON.stringify({ error: { code: 131047, message: 'Re-engagement message' } }), { status: 400 })) as any;
+    expect(await sendText({ phoneNumberId: '1', token: 'T' }, '+2126', 'x', bad)).toEqual({ ok: false, error: '131047: Re-engagement message' });
+  });
+});

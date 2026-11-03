@@ -21,3 +21,7 @@ pre{white-space:pre-wrap;background:var(--bg);padding:10px;border-radius:8px}
 form.inline>div{flex:1 1 130px}form.inline>div input{width:100%}
 .big{width:100%;padding:16px;font-size:18px;border-radius:12px;text-align:center}.btn.big{display:block}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid2 .big{width:100%}button.ok{background:#16a34a;color:#fff}.btn.on{background:var(--ink);color:#fff}
+.chat{display:flex;flex-direction:column;gap:6px;max-height:55vh;overflow:auto}
+.bub{max-width:80%;padding:8px 12px;border-radius:12px;white-space:pre-wrap;word-break:break-word}
+.bub.in{align-self:flex-start;background:#f1f5f9}.bub.out{align-self:flex-end;background:#dcfce7}
+.bub .meta{display:block;font-size:11px;color:var(--muted);margin-top:2px}

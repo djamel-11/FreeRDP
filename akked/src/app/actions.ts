@@ -12,6 +12,8 @@ import { STATUSES } from '@/lib/i18n';
 import { canonicalCity } from '@/lib/cities';
 import { decrypt, encrypt } from '@/lib/secrets';
 import { sendParcel } from '@/lib/ameex';
+import { sendText, sendTemplate } from '@/lib/whatsapp';
+import { recordMessage, waCreds, windowOpen } from '@/lib/inbox';
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
 
@@ -221,4 +223,51 @@ export async function quickAddOrders(f: FormData) {
   const r = createOrders(me.workspaceId, me.userId, rows, 'quick');
   if (r.error) redirect('/orders/quick?error=' + r.error);
   redirect(`/orders?added=${r.created}&skipped=${skipped}`);
+}
+
+export async function saveWhatsapp(f: FormData) {
+  const me = await requireSession();
+  if (me.role !== 'owner') redirect('/settings');
+  const pnid = s(f, 'phone_number_id'), token = s(f, 'token');
+  if (!pnid) { db().prepare('UPDATE workspaces SET wa_phone_number_id=NULL, wa_token_enc=NULL WHERE id=?').run(me.workspaceId); redirect('/settings?wa=off'); }
+  if (!/^\d{5,25}$/.test(pnid)) redirect('/settings?wa=invalid');
+  try {
+    db().prepare('UPDATE workspaces SET wa_phone_number_id=?, wa_template_name=?, wa_template_lang=? WHERE id=?').run(pnid, s(f, 'template') || 'order_confirmation', s(f, 'lang') || 'ar', me.workspaceId);
+    if (token) db().prepare('UPDATE workspaces SET wa_token_enc=? WHERE id=?').run(encrypt(token), me.workspaceId);
+  } catch { redirect('/settings?wa=taken'); }
+  redirect('/settings?wa=saved');
+}
+
+/** Official one-click confirmation: sends the approved template and moves the order to "message sent". */
+export async function sendConfirmTemplate(id: number, _fd?: FormData) {
+  const me = await requireSession();
+  const o = getOrder(me.workspaceId, id);
+  if (!o || o.status !== 'new') redirect('/confirm?err=err_state');
+  const c = waCreds(me.workspaceId);
+  if (!c) redirect('/confirm?err=err_wa_nocreds');
+  const r = await sendTemplate(c!, o.phone, c!.template, c!.lang, [o.customer_name, [o.products, o.size, o.color].filter(Boolean).join(' ') || '-', String(o.price), o.city || '-']);
+  if (!r.ok) redirect('/confirm?err=' + encodeURIComponent(r.error ?? 'error'));
+  recordMessage(me.workspaceId, { waId: r.id, phone: o.phone, direction: 'out', type: 'template', body: `[${c!.template}] ${o.customer_name} · ${o.products ?? ''} · ${o.price} MAD`, status: 'sent', orderId: o.id });
+  changeStatus(me.workspaceId, me.userId, id, 'message_sent');
+  redirect('/confirm');
+}
+
+export async function sendWaText(digits: string, f: FormData) {
+  const me = await requireSession();
+  const phone = '+' + digits.replace(/\D/g, ''); const back = `/inbox/${digits.replace(/\D/g, '')}`;
+  const text = s(f, 'text');
+  if (!text) redirect(back);
+  const c = waCreds(me.workspaceId);
+  if (!c) redirect(back + '?err=err_wa_nocreds');
+  if (!windowOpen(me.workspaceId, phone)) redirect(back + '?err=window');
+  const r = await sendText(c!, phone, text.slice(0, 1000));
+  if (!r.ok) redirect(back + '?err=' + encodeURIComponent(r.error ?? 'error'));
+  recordMessage(me.workspaceId, { waId: r.id, phone, direction: 'out', type: 'text', body: text.slice(0, 1000), status: 'sent' });
+  redirect(back);
+}
+
+export async function inboxStatus(id: number, status: string, digits: string, _fd?: FormData) {
+  const me = await requireSession();
+  if (['confirmed', 'cancelled', 'no_answer'].includes(status)) changeStatus(me.workspaceId, me.userId, id, status);
+  redirect(`/inbox/${digits.replace(/\D/g, '')}`);
 }

@@ -51,14 +51,14 @@ export const getOrder = (wsId: number, id: number) =>
 export const customerHistory = (wsId: number, phone: string, excludeId: number) =>
   db().prepare('SELECT id, order_number, status, price, products, created_at FROM orders WHERE workspace_id = ? AND phone = ? AND id <> ? ORDER BY id DESC').all(wsId, phone, excludeId) as any[];
 
-export function changeStatus(wsId: number, userId: number, id: number, status: string, callbackAt?: string | null) {
+export function changeStatus(wsId: number, userId: number | null, id: number, status: string, callbackAt?: string | null, note?: string) {
   const o = getOrder(wsId, id);
   if (!o) return false;
   const d = db();
   d.transaction(() => {
     d.prepare(`UPDATE orders SET status = ?, callback_at = ?, status_changed_at = CURRENT_TIMESTAMP, agent_id = COALESCE(agent_id, ?) WHERE id = ?`)
       .run(status, status === 'callback' ? callbackAt || null : null, userId, id);
-    d.prepare('INSERT INTO order_events (order_id, user_id, from_status, to_status) VALUES (?,?,?,?)').run(id, userId, o.status, status);
+    d.prepare('INSERT INTO order_events (order_id, user_id, from_status, to_status, note) VALUES (?,?,?,?,?)').run(id, userId, o.status, status, note ?? null);
   })();
   return true;
 }
