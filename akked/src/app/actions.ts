@@ -18,6 +18,8 @@ import { CANCEL_REASONS } from '@/lib/reasons';
 import { bulkSend, sendOrderViaCarrier, trackWorkspace } from '@/lib/carrierFlow';
 import { CONNECTORS } from '@/lib/connectors';
 import { createCarrier, createFromPreset, deleteCarrier, getCarrier, listCarriers, renameCarrier, setCities, setConfig, setCreds, setTemplate } from '@/lib/carriers';
+import { readTable } from '@/lib/tableReader';
+import { FIELDS, HIST_STATUSES, importHistory, planImport, type Field, type HistStatus } from '@/lib/history';
 import { mergeMapping, readTemplate, SOURCES, suggestSource, type ColumnMap, type ExportConfig, type Source } from '@/lib/exportEngine';
 import { parseSheetUrl, syncSheet } from '@/lib/sheets';
 import { sendText, sendTemplate } from '@/lib/whatsapp';
@@ -53,7 +55,7 @@ export async function login(f: FormData) {
   if (!u || !verifyPassword(s(f, 'password'), u.password_hash)) { recordFail(key); redirect('/login?error=1'); }
   clearFails(key);
   await startSession(u.id);
-  redirect('/confirm');
+  redirect('/home');
 }
 
 /** Forgot password without email: the one-time recovery code shown at signup. A new code is issued after use. */
@@ -474,4 +476,41 @@ export async function replaceCarrierTemplate(id: number, f: FormData) {
   setConfig(me.workspaceId, id, { headerRow: tpl!.headerRow, columns, output: tpl!.kind });
   setTemplate(me.workspaceId, id, tpl!.kind === 'xlsx' ? bytes : null, (file as File).name);
   redirect(`/carriers/${id}?replaced=${added}`);
+}
+
+// ---------------- import past orders (history) from a carrier export ----------------
+export async function startHistoryImport(f: FormData) {
+  const me = await requireOwner();
+  const file = f.get('file');
+  if (!(file instanceof File) || file.size === 0) redirect('/orders/history?error=file');
+  if ((file as File).size > 3_000_000) redirect('/orders/history?error=big');
+  const bytes = new Uint8Array(await (file as File).arrayBuffer());
+  if (bytes[0] === 0xd0 && bytes[1] === 0xcf) redirect('/orders/history?error=xls');
+  const table = await readTable(bytes, (file as File).name);
+  if (!table || table.rows.length === 0) redirect('/orders/history?error=parse');
+  db().prepare(`DELETE FROM import_jobs WHERE created_at < datetime('now','-1 day')`).run();
+  const r = db().prepare('INSERT INTO import_jobs (workspace_id, filename, bytes) VALUES (?,?,?)').run(me.workspaceId, (file as File).name.slice(0, 120), bytes);
+  redirect(`/orders/history/${Number(r.lastInsertRowid)}`);
+}
+
+export async function confirmHistoryImport(jobId: number, f: FormData) {
+  const me = await requireOwner();
+  const job = db().prepare('SELECT bytes, filename FROM import_jobs WHERE id = ? AND workspace_id = ?').get(jobId, me.workspaceId) as any;
+  if (!job) redirect('/orders/history?error=gone');
+  const table = await readTable(new Uint8Array(job.bytes), job.filename ?? '');
+  if (!table) redirect('/orders/history?error=parse');
+  const fields: Record<number, Field> = {}; const used = new Set<string>();
+  for (const h of table!.headers) {
+    const v = s(f, 'f_' + h.col); let fld = ((FIELDS as readonly string[]).includes(v) ? v : 'ignore') as Field;
+    if (fld !== 'ignore' && fld !== 'notes' && used.has(fld)) fld = 'ignore'; // each field only once
+    used.add(fld); fields[h.col] = fld;
+  }
+  const statusMap: Record<string, HistStatus> = {};
+  for (let i = 0; i < 60; i++) { const raw = s(f, 'stv_' + i); if (!raw) break; const v = s(f, 'st_' + i); if ((HIST_STATUSES as readonly string[]).includes(v)) statusMap[raw] = v as HistStatus; }
+  const dflt = (HIST_STATUSES as readonly string[]).includes(s(f, 'default')) ? (s(f, 'default') as HistStatus) : 'shipped';
+  const plan = planImport(table!, { fields, statusMap, defaultStatus: dflt });
+  const r = importHistory(me.workspaceId, plan.rows);
+  db().prepare('DELETE FROM import_jobs WHERE id = ?').run(jobId);
+  revalidatePath('/orders');
+  redirect(`/orders?history=${r.added}-${r.duplicates}-${plan.invalid}`);
 }

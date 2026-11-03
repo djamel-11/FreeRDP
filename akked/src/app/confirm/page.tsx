@@ -3,7 +3,6 @@ import { requireSession } from '@/lib/auth';
 import { getT } from '@/lib/i18n';
 import { getWorkspace, queue, queueCounts, type Lane } from '@/lib/orders';
 import { buildMessage, waLink } from '@/lib/templates';
-import Onboarding from '../onboarding';
 import { quickCancel, quickStatus, sendConfirmTemplate } from '../actions';
 import { CANCEL_REASONS } from '@/lib/reasons';
 import { waCreds } from '@/lib/inbox';
@@ -27,8 +26,7 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
     </div>
     {sp.err && <div className="err" dir="auto">{(t as any)[sp.err] ?? sp.err}</div>}
     {!o ? (<>
-      <Onboarding wsId={me.workspaceId} t={t as any} />
-      <div className="card" style={{ textAlign: 'center' }}><h1>{t.allDone}</h1>
+        <div className="card" style={{ textAlign: 'center' }}><h1>{t.allDone}</h1>
         <p><Link className="btn" href="/orders/quick">+ {t.quickAdd}</Link></p></div>
     </>) : (() => {
       const msg = buildMessage((ws as any)['template_' + key], key, o, ws.name);

@@ -146,3 +146,15 @@ describe('Batch B: billing, backup, data rights, settings', () => {
     expect(settings.getSetting('support_whatsapp')).toBe('+212611111111');
   });
 });
+
+describe('searching orders by phone', () => {
+  it('finds +212 numbers however the user types them, and still searches names', () => {
+    const d = db(); d.prepare(`INSERT INTO workspaces (id, name, plan, status, period_end) VALUES (7,'Q','pro','active','2099-01-01')`).run();
+    d.prepare(`INSERT INTO orders (workspace_id, order_number, customer_name, phone, status) VALUES (7,'Q1','Sara 0600','+212655443322','new'),(7,'Q2','Hind','+212700112233','new')`).run();
+    const n = (q: string) => orders.listOrders(7, { q }).map((o: any) => o.order_number);
+    for (const q of ['0655443322', '06 55 44 33 22', '+212655443322', '00212655443322', '212655443322', '655443322', '0655443', '55 44 33']) expect([q, n(q)]).toEqual([q, ['Q1']]);
+    expect(n('Hind')).toEqual(['Q2']); expect(n('sara')).toEqual(['Q1']); expect(n('0600')).toEqual(['Q1']); // a name containing digits still matches as text
+    expect(n('0799999999')).toEqual([]);
+    expect(orders.listOrders(1, { q: '0655443322' })).toHaveLength(0); // other sellers' orders are never searched
+  });
+});

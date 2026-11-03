@@ -18,6 +18,11 @@ Moroccan phone normalization · filters/search · wa.me WhatsApp with editable D
 · customer history + "refused before" badge (per seller only) · CSV export (AMEEX placeholder + generic, pluggable in `src/lib/exporters.ts`)
 · dashboard · monthly order limit + expiry enforcement · Arabic RTL default / French · PWA manifest.
 
+## How the app is organised (kept deliberately simple)
+Five tabs at the bottom: **Home · Add · Confirm · Orders · More**. *Home* shows the whole job as three numbered steps (1 Add orders → 2 Confirm with customers → 3 Ship) with live counts and one big button each. Everything occasional (dashboard, delivery companies, team, settings, subscription, history import, my data) lives under **More**, grouped with one-line descriptions. The orders list has two primary buttons; import/export/etc. are in a collapsed *More actions* menu.
+- **Import past orders** (More → Order history): upload a carrier export (xlsx/csv); columns and statuses are suggested and shown in a preview; orders are stored as **history** (never in the confirmation queue, not counted in the monthly quota, re-importing adds nothing), so the *refused before* warning and the return stats work from day one.
+- Order search accepts phones however they are typed (`0655…`, `+212 655…`, `655 44 33`).
+
 ## Easy flows (what sellers/agents use daily)
 - **Smart add** (`/orders/quick`): paste an order as received (WhatsApp/Instagram, Arabic/French/one-line or labelled, several at once) → name, phone, city (AMEEX spelling), address, product, price are detected; review and save.
 - **Confirmation mode** (`/confirm`): one order at a time. *To send* lane: big WhatsApp button, then the order moves on. *Awaiting reply* lane: ✅ Confirmed / ❌ Cancelled / 📵 No answer / ⏰ in 2h / tomorrow. Orders with earlier refusals show a warning.

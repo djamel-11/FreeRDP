@@ -12,7 +12,7 @@ export const getWorkspace = (id: number) => db().prepare('SELECT * FROM workspac
 
 export function monthlyUsage(wsId: number, now = new Date()): number {
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().replace('T', ' ').slice(0, 19);
-  return (db().prepare('SELECT COUNT(*) c FROM orders WHERE workspace_id = ? AND created_at >= ?').get(wsId, start) as any).c;
+  return (db().prepare("SELECT COUNT(*) c FROM orders WHERE workspace_id = ? AND created_at >= ? AND COALESCE(source, '') <> 'history'").get(wsId, start) as any).c;
 }
 
 export function createOrders(wsId: number, userId: number | null, rows: ParsedOrder[], source: string, now = new Date()) {
@@ -40,7 +40,13 @@ export function listOrders(wsId: number, f: OrderFilters) {
   if (f.agent) { where.push('o.agent_id = @agent'); p.agent = Number(f.agent); }
   if (f.from) { where.push('date(o.created_at) >= @from'); p.from = f.from; }
   if (f.to) { where.push('date(o.created_at) <= @to'); p.to = f.to; }
-  if (f.q) { where.push('(o.customer_name LIKE @q OR o.phone LIKE @q)'); p.q = `%${f.q.replace(/[%_]/g, '')}%`; }
+  if (f.q) {
+    const q = f.q.replace(/[%_]/g, '').trim();
+    // People type phones as 06…, +212 6…, 0212… or with spaces: compare on the national digits (what follows 212 / the leading 0)
+    const digits = q.replace(/\D/g, '').replace(/^(00)?212/, '').replace(/^0/, '');
+    if (/^[\d\s+.\-()]+$/.test(q) && digits.length >= 3) { where.push('(o.phone LIKE @tail OR o.customer_name LIKE @q)'); p.tail = `%${digits}%`; p.q = `%${q}%`; }
+    else { where.push('(o.customer_name LIKE @q OR o.phone LIKE @q)'); p.q = `%${q}%`; }
+  }
   return db().prepare(`SELECT o.*, (SELECT COUNT(*) FROM orders x WHERE x.workspace_id = o.workspace_id AND x.phone = o.phone AND x.id <> o.id AND x.status IN ('cancelled','returned')) AS refusals
     FROM orders o WHERE ${where.join(' AND ')} ORDER BY o.id DESC LIMIT 300`).all(p) as any[];
 }

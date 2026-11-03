@@ -14,7 +14,7 @@ const RULES: [RegExp, Source][] = [
   [/(ville.*(id|code)|city.*(id|code)|id.*(ville|city))/i, 'city_id'],
   [/(ville|city|destination|المدينة)/i, 'city'],
   [/(adresse|address|الع[نن]وان)/i, 'address'],
-  [/(prix|montant|cod|crbt|price|amount|total|valeur|الثمن|السعر|المبلغ)/i, 'price'],
+  [/(prix|montant|\bcod\b|crbt|price|amount|total|valeur|الثمن|السعر|المبلغ)/i, 'price'],
   [/(marchandise|produit|article|d[ée]signation|contenu|product|content|description|المنتج)/i, 'product_full'],
   [/(quantit|qt[ée]|qty|nbr|nombre|colis|pieces|pi[èe]ces|الكمية)/i, 'quantity'],
   [/(commentaire|remarque|note|observation|comment|ملاحظات)/i, 'notes'],

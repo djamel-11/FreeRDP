@@ -7,7 +7,6 @@ import { db } from '@/lib/db';
 import { bulkSendCarrier, listStatus, trackNow } from '../actions';
 import { listCarriers } from '@/lib/carriers';
 import { CONNECTORS } from '@/lib/connectors';
-import Onboarding from '../onboarding';
 
 export default async function Orders({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const me = await requireSession(); const { t } = await getT(); const sp = await searchParams;
@@ -25,23 +24,27 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
   const [bs, bf] = (sp.bulk ?? '').split('-'); const [tc, td, tr] = (sp.tracked ?? '').split('-');
   const used = monthlyUsage(me.workspaceId); const lim = PLANS[ws.plan as PlanKey].orders;
   return (<>
-    <Onboarding wsId={me.workspaceId} t={t as any} />
-    {me.role === 'owner' && carriers.length === 0 && <div className="card" style={{ borderColor: 'var(--brand)' }}><p>📤 {t.uploadModelCta}</p><p><Link className="btn" href="/carriers/new#upload">{t.uploadModel}</Link></p></div>}
+    {me.role === 'owner' && carriers.length === 0 && unsent > 0 && <div className="card" style={{ borderColor: 'var(--brand)' }}><p>📤 {t.uploadModelCta}</p><p><Link className="btn" href="/carriers/new#upload">{t.uploadModel}</Link></p></div>}
     {sp.bulk && <div className={bf === '0' ? 'ok' : 'err'}>{t.bulkSent}: {bs} · {t.bulkFailed}: {bf}{sp.bf ? ' — ' + sp.bf.split(',').map((x) => { const [n, e] = x.split(':'); return `${n} (${(t as any)['ameex_' + e] ?? e})`; }).join(' · ') : ''}</div>}
+    {sp.history && (() => { const [ha, hd, hi] = sp.history.split('-'); return <div className="ok">{t.histDone}: {ha} · {t.histDup}: {hd} · {t.histInvalid}: {hi}</div>; })()}
     {sp.tracked && <div className="ok">{t.trackedN}: {tc} · {t.deliveredLbl}: {td} · {t.returnedLbl}: {tr}</div>}
     {sp.added && <div className="ok">{t.added}: {sp.added}{sp.skipped && sp.skipped !== '0' ? ` · ${t.skipped}: ${sp.skipped}` : ''}</div>}
     {!isActive(ws) && <div className="err">{t.expired}</div>}
     {badCities.length > 0 && <div className="err">⚠ {t.cityWarn}: {badCities.map((b) => <Link key={b.id} href={`/orders/${b.id}`}>{b.order_number} ({b.city || '—'}) </Link>)}</div>}
+    <h1>{t.orders}</h1>
     <div className="inline" style={{ marginBottom: 12 }}>
-      <Link className="btn" href="/orders/quick">+ {t.quickAdd}</Link>
+      <Link className="btn" href="/orders/quick">{t.addOrdersBtn}</Link>
       <Link className="btn sec" href="/confirm">{t.startConfirm}</Link>
-      <Link className="btn sec" href="/orders/import">{t.import}</Link>
-      <Link className="btn sec" href="/orders/new">{t.fullForm}</Link>
-      {me.role === 'owner' && <>{carriers.map((c) => <a key={c.id} className="btn sec" href={`/export?carrier=${c.id}`}>{t.exportFor} {c.name}</a>)}
-      <a className="btn sec" href="/export?format=generic">{t.export} CSV</a>
-      <Link className="btn sec" href="/carriers/new#upload">📤 {t.uploadModel}</Link>
-      <Link className="btn sec" href="/carriers">🚚 {t.carriers}</Link></>}
     </div>
+    <details className="card menu"><summary>⋯ {t.moreActions}</summary>
+      <div className="menu-links">
+        <Link className="btn sec" href="/orders/import">{t.import}</Link>
+        <Link className="btn sec" href="/orders/new">{t.fullForm}</Link>
+        <Link className="btn sec" href="/orders/history">📥 {t.histTitle}</Link>
+        {me.role === 'owner' && <>{carriers.map((c) => <a key={c.id} className="btn sec" href={`/export?carrier=${c.id}`}>⬇ {t.exportFor} {c.name}</a>)}
+        <a className="btn sec" href="/export?format=generic">⬇ {t.export} CSV</a>
+        <Link className="btn sec" href="/carriers/new#upload">📤 {t.uploadModel}</Link></>}
+      </div></details>
     {((unsent > 0 && apiCarriers.length > 0) || (shipped > 0 && canTrack && me.role === 'owner')) && <div className="inline" style={{ marginBottom: 12 }}>
       {unsent > 0 && apiCarriers.map((c) => <form key={c.id} action={bulkSendCarrier.bind(null, c.id)}><button>🚚 {t.bulkSend.replace('AMEEX', c.name)} ({unsent})</button></form>)}
       {shipped > 0 && canTrack && me.role === 'owner' && <form action={trackNow}><button className="sec">🔄 {t.trackNow.replace('AMEEX', '')} ({shipped})</button></form>}

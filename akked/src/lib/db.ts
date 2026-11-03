@@ -67,6 +67,7 @@ export function db(): Db {
     status TEXT NOT NULL DEFAULT 'pending', created_at TEXT DEFAULT CURRENT_TIMESTAMP, decided_at TEXT, decided_by INTEGER
   );
   CREATE INDEX IF NOT EXISTS idx_payments_ws ON payments(workspace_id, id);`);
+  d.exec(`CREATE TABLE IF NOT EXISTS import_jobs (id INTEGER PRIMARY KEY, workspace_id INTEGER NOT NULL, filename TEXT, bytes BLOB NOT NULL, created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
   addCol('orders', 'cancel_reason', 'TEXT');
   addCol('orders', 'carrier_status', 'TEXT');
   addCol('orders', 'carrier_checked_at', 'TEXT');

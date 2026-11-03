@@ -17,7 +17,7 @@ describe('column suggestions (any carrier)', () => {
       'NUMERO DE COMMANDE': 'order_number', 'Réf': 'order_number', 'DESTINATAIRE': 'customer_name', 'Nom du client': 'customer_name', 'الاسم': 'customer_name',
       'TELEPHONE': 'phone_national', 'GSM': 'phone_national', 'Mobile': 'phone_national', 'VILLE': 'city', 'Ville ID': 'city_id', 'City code': 'city_id',
       'ADRESSE': 'address', 'Adresse de livraison': 'address', 'PRIX': 'price', 'CRBT': 'price', 'Montant COD': 'price', 'MARCHANDISE': 'product_full', 'Désignation': 'product_full',
-      'Quantité': 'quantity', 'COMMENTAIRE': 'notes', 'Observations': 'notes', 'Date': 'date', 'Poids': 'empty', 'Fragile': 'empty',
+      'Quantité': 'quantity', 'COMMENTAIRE': 'notes', 'Observations': 'notes', 'Date': 'date', 'Poids': 'empty', 'Fragile': 'empty', 'Code': 'empty', 'Code postal': 'empty', 'COD': 'price',
     };
     for (const [h, s] of Object.entries(cases)) expect([h, E.suggestSource(h)]).toEqual([h, s]);
   });
