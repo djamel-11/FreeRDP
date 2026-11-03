@@ -13,6 +13,7 @@ export function exportWorkspaceData(wsId: number) {
     orders: orders.map(strip),
     order_events: d.prepare('SELECT e.* FROM order_events e JOIN orders o ON o.id = e.order_id WHERE o.workspace_id = ? ORDER BY e.id').all(wsId),
     whatsapp_messages: d.prepare('SELECT id, phone, direction, type, body, status, created_at FROM wa_messages WHERE workspace_id = ? ORDER BY id').all(wsId),
+    carriers: d.prepare('SELECT id, name, connector, config, template_name FROM carriers WHERE workspace_id = ?').all(wsId),
     payments: d.prepare('SELECT id, plan, amount, method, reference, status, created_at FROM payments WHERE workspace_id = ? ORDER BY id').all(wsId),
   };
 }
@@ -35,6 +36,8 @@ export function deleteWorkspace(wsId: number) {
     d.prepare('DELETE FROM order_events WHERE order_id IN (SELECT id FROM orders WHERE workspace_id = ?)').run(wsId);
     d.prepare('DELETE FROM wa_messages WHERE workspace_id = ?').run(wsId);
     d.prepare('DELETE FROM orders WHERE workspace_id = ?').run(wsId);
+    d.prepare('DELETE FROM carrier_cities WHERE carrier_id IN (SELECT id FROM carriers WHERE workspace_id = ?)').run(wsId);
+    d.prepare('DELETE FROM carriers WHERE workspace_id = ?').run(wsId);
     d.prepare('DELETE FROM payments WHERE workspace_id = ?').run(wsId);
     d.prepare('DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE workspace_id = ?)').run(wsId);
     d.prepare('DELETE FROM users WHERE workspace_id = ?').run(wsId);

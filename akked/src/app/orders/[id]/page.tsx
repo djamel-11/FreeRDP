@@ -4,11 +4,12 @@ import { requireSession } from '@/lib/auth';
 import { getT, STATUSES } from '@/lib/i18n';
 import { customerHistory, getOrder, getWorkspace } from '@/lib/orders';
 import { buildMessage, waLink } from '@/lib/templates';
-import { sendToAmeex, sendWhatsapp, updateStatus } from '../../actions';
+import { sendViaCarrier, sendWhatsapp, updateStatus } from '../../actions';
+import { getCarrier, listCarriers } from '@/lib/carriers';
 
-export default async function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ lang?: string; ameex?: string }> }) {
+export default async function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ lang?: string; ship?: string }> }) {
   const me = await requireSession(); const { t } = await getT();
-  const { id } = await params; const { lang, ameex } = await searchParams;
+  const { id } = await params; const { lang, ship } = await searchParams;
   const o = getOrder(me.workspaceId, Number(id)); if (!o) notFound();
   const ws = getWorkspace(me.workspaceId);
   const hist = customerHistory(me.workspaceId, o.phone, o.id);
@@ -33,12 +34,15 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       <form action={sendWhatsapp}><input type="hidden" name="id" value={o.id} /><input type="hidden" name="url" value={waLink(o.phone, msg)} />
         <button>💬 {t.openWa}</button></form>
     </div>
-    {ameex && <div className={ameex === 'ok' ? 'ok' : 'err'}>{ameex === 'ok' ? t.ameexSent : (t as any)['ameex_' + ameex]}</div>}
-    <div className="card"><h2>AMEEX</h2>
-      {o.ameex_parcel_code ? <p>{t.ameexParcel}: <strong dir="ltr">{o.ameex_parcel_code}</strong></p> : (
-        <form action={sendToAmeex}><input type="hidden" name="id" value={o.id} /><button disabled={o.status !== 'confirmed'}>🚚 {t.ameexSend}</button></form>)}
-      {o.ameex_status && <p>{t.ameexStatusLbl}: <b>{o.ameex_status}</b></p>}
-      {o.ameex_error && <p className="muted" dir="ltr">{o.ameex_error}</p>}
+    {ship && <div className={ship === 'ok' ? 'ok' : 'err'}>{ship === 'ok' ? t.shipOk : (t as any)['ship_' + ship] ?? ship}</div>}
+    <div className="card"><h2>🚚 {t.shipTitle}</h2>
+      {o.parcel_code ? <p>{getCarrier(me.workspaceId, o.carrier_id ?? 0)?.name ?? ''} · {t.parcelLbl}: <strong dir="ltr">{o.parcel_code}</strong></p> : (() => {
+        const apis = listCarriers(me.workspaceId).filter((c) => c.connector && c.has_creds);
+        return apis.length === 0 ? <p className="muted"><Link href="/carriers">{t.carriers}</Link></p>
+          : <div className="inline">{apis.map((c) => <form key={c.id} action={sendViaCarrier.bind(null, c.id)}><input type="hidden" name="id" value={o.id} /><button disabled={o.status !== 'confirmed'}>🚚 {t.sendTo} {c.name}</button></form>)}</div>;
+      })()}
+      {o.carrier_status && <p>{t.ameexStatusLbl}: <b>{o.carrier_status}</b></p>}
+      {o.carrier_error && <p className="muted" dir="ltr">{o.carrier_error}</p>}
     </div>
     <div className="card"><h2>{t.updateStatus}</h2>
       <form action={updateStatus} className="inline"><input type="hidden" name="id" value={o.id} />

@@ -77,6 +77,8 @@ const norm = (s: string) =>
     .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
     .replace(/[’'`´-]/g, ' ').replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
 const squash = (s: string) => norm(s).replace(/ /g, '');
+/** Normalised comparison key for a city name (accents, case, spaces and punctuation ignored). */
+export const cityKey = squash;
 
 /** AMEEX's own spelling is authoritative: key → {id, name} (first id wins for duplicate names). */
 const AMEEX_BY_KEY = new Map<string, { id: number; name: string }>();
@@ -118,3 +120,6 @@ export function canonicalCity(input: string | null | undefined, opts: { fuzzy?: 
   for (const [alias, name] of INDEX) if (alias.length >= 5 && lev1(k, alias)) hits.add(name);
   return hits.size === 1 ? [...hits][0] : null; // typo tolerance only when unambiguous
 }
+
+/** AMEEX's own entry (id + name) for a canonical city name. */
+export const ameexIdOf = (name: string | null): { id: number; name: string } | null => (name ? AMEEX_BY_KEY.get(squash(name)) ?? null : null);

@@ -8,14 +8,17 @@ import { hashPassword, verifyPassword, normalizeRecoveryCode, tempPassword, gene
 import { clearFails, recordFail, tooMany } from '@/lib/ratelimit';
 import { normalizePhone } from '@/lib/phone';
 import { parseOrders } from '@/lib/import';
-import { ameexCityId, changeStatus, createOrders, DEMO_ORDERS, getOrder, getWorkspace, teamMembers, updateOrder } from '@/lib/orders';
+import { changeStatus, createOrders, DEMO_ORDERS, getOrder, getWorkspace, teamMembers, updateOrder } from '@/lib/orders';
 import { PLANS, type PlanKey } from '@/lib/plans';
 import { STATUSES } from '@/lib/i18n';
 import { canonicalCity } from '@/lib/cities';
 import { decrypt, encrypt } from '@/lib/secrets';
 import { sendParcel } from '@/lib/ameex';
 import { CANCEL_REASONS } from '@/lib/reasons';
-import { bulkSendToAmeex, sendOrderToAmeex, trackWorkspace } from '@/lib/ameexFlow';
+import { bulkSend, sendOrderViaCarrier, trackWorkspace } from '@/lib/carrierFlow';
+import { CONNECTORS } from '@/lib/connectors';
+import { createCarrier, createFromPreset, deleteCarrier, getCarrier, listCarriers, renameCarrier, setCities, setConfig, setCreds } from '@/lib/carriers';
+import { readTemplate, SOURCES, suggestSource, type ColumnMap, type ExportConfig, type Source } from '@/lib/exportEngine';
 import { parseSheetUrl, syncSheet } from '@/lib/sheets';
 import { sendText, sendTemplate } from '@/lib/whatsapp';
 import { checkProof, createPayment, decidePayment } from '@/lib/billing';
@@ -182,41 +185,6 @@ export async function adminSetSubscription(f: FormData) {
   revalidatePath('/admin');
 }
 
-export async function saveAmeexCreds(f: FormData) {
-  const me = await requireSession();
-  if (me.role !== 'owner') redirect('/settings');
-  const id = s(f, 'api_id'), key = s(f, 'api_key');
-  if (!id) { // empty id = disconnect
-    db().prepare('UPDATE workspaces SET ameex_api_id=NULL, ameex_api_key_enc=NULL WHERE id=?').run(me.workspaceId);
-    redirect('/settings?ameex=off');
-  }
-  // blank key keeps the stored one
-  if (key) db().prepare('UPDATE workspaces SET ameex_api_id=?, ameex_api_key_enc=? WHERE id=?').run(id, encrypt(key), me.workspaceId);
-  else db().prepare('UPDATE workspaces SET ameex_api_id=? WHERE id=?').run(id, me.workspaceId);
-  redirect('/settings?ameex=saved');
-}
-
-export async function sendToAmeex(f: FormData) {
-  const me = await requireSession();
-  const id = Number(s(f, 'id'));
-  const r = await sendOrderToAmeex(me.workspaceId, me.userId, id);
-  redirect(`/orders/${id}?ameex=${r.ok ? 'ok' : r.error === 'fail' ? 'fail' : r.error}`);
-}
-
-/** Send every confirmed order that has not been sent yet (max 50 per click). */
-export async function bulkSendAmeex() {
-  const me = await requireSession();
-  const r = await bulkSendToAmeex(me.workspaceId, me.userId);
-  const fails = r.failed.slice(0, 8).map((x) => `${x.order_number}:${x.error}`).join(',');
-  redirect(`/orders?bulk=${r.sent}-${r.failed.length}${fails ? '&bf=' + encodeURIComponent(fails) : ''}`);
-}
-
-export async function trackAmeexNow() {
-  const me = await requireOwner();
-  const r = await trackWorkspace(me.workspaceId);
-  redirect(`/orders?tracked=${r.checked}-${r.delivered}-${r.returned}`);
-}
-
 export async function saveSheet(f: FormData) {
   const me = await requireOwner();
   const url = s(f, 'url');
@@ -231,20 +199,6 @@ export async function syncSheetNow() {
   const r = await syncSheet(me.workspaceId);
   revalidatePath('/orders');
   redirect(`/settings?sheet=${r.ok ? 'synced-' + r.added : 'err-' + r.error}`);
-}
-
-/** Admin: paste "id,name" lines (AMEEX city ids). Names are matched to canonical cities. */
-export async function adminImportCityIds(f: FormData) {
-  await requireAdmin();
-  let ok = 0; const bad: string[] = [];
-  const up = db().prepare('INSERT INTO ameex_cities (canonical, ameex_id) VALUES (?,?) ON CONFLICT(canonical) DO UPDATE SET ameex_id=excluded.ameex_id');
-  for (const line of s(f, 'text').split(/\r?\n/)) {
-    const m = line.match(/^\s*(\d+)\s*[,;\t]\s*(.+?)\s*$/);
-    if (!m) continue;
-    const canon = canonicalCity(m[2]);
-    if (canon) { up.run(canon, Number(m[1])); ok++; } else bad.push(m[2]);
-  }
-  redirect(`/admin?cities_ok=${ok}&cities_bad=${encodeURIComponent(bad.slice(0, 40).join('|'))}`);
 }
 
 const localStamp = (d: Date) => { const z = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; };
@@ -416,4 +370,88 @@ export async function deleteAccountAction(f: FormData) {
   deleteWorkspace(me.workspaceId);
   (await cookies()).delete('akked_session');
   redirect('/login');
+}
+
+// ---------------- delivery companies (carriers) ----------------
+/** Add AMEEX (or any built-in connector) with its credentials: API + the company's own export template. */
+export async function addConnectorCarrier(connectorKey: string, f: FormData) {
+  const me = await requireOwner();
+  const conn = CONNECTORS[connectorKey]; if (!conn) redirect('/carriers');
+  const creds: Record<string, string> = {};
+  for (const fld of conn.fields) { creds[fld.key] = s(f, fld.key); if (!creds[fld.key]) redirect('/carriers/new?error=creds'); }
+  const id = createFromPreset(me.workspaceId, connectorKey, creds);
+  redirect(`/carriers/${id}?created=1`);
+}
+
+/** Any other company: upload its Excel/CSV template (or paste its column names) → we suggest the mapping. */
+export async function addFileCarrier(f: FormData) {
+  const me = await requireOwner();
+  const name = s(f, 'name'); if (!name) redirect('/carriers/new?error=name');
+  let bytes: Uint8Array | null = null; let filename = 'template.csv';
+  const file = f.get('template');
+  if (file instanceof File && file.size > 0) {
+    if (file.size > 2_000_000) redirect('/carriers/new?error=big');
+    bytes = new Uint8Array(await file.arrayBuffer()); filename = file.name;
+  } else if (s(f, 'headers')) bytes = new TextEncoder().encode(s(f, 'headers').replace(/\n/g, ',').slice(0, 2000));
+  if (!bytes) redirect('/carriers/new?error=file');
+  const tpl = await readTemplate(bytes!, filename);
+  if (!tpl) redirect('/carriers/new?error=parse');
+  const columns: ColumnMap[] = tpl!.headers.map((h) => ({ col: h.col, header: h.header, source: suggestSource(h.header) }));
+  const config: ExportConfig = { headerRow: tpl!.headerRow, columns, output: tpl!.kind };
+  const id = createCarrier(me.workspaceId, { name, config, template: tpl!.kind === 'xlsx' ? bytes : null, templateName: tpl!.kind === 'xlsx' ? filename : null });
+  redirect(`/carriers/${id}?created=1`);
+}
+
+export async function saveCarrierMapping(id: number, f: FormData) {
+  const me = await requireOwner();
+  const c = getCarrier(me.workspaceId, id); if (!c) redirect('/carriers');
+  const columns: ColumnMap[] = c!.config.columns.map((col) => {
+    const src = s(f, 'src_' + col.col); const source = ((SOURCES as readonly string[]).includes(src) ? src : 'empty') as Source;
+    return { col: col.col, header: col.header, source, ...(source === 'fixed' ? { fixed: s(f, 'fixed_' + col.col).slice(0, 200) } : {}) };
+  });
+  const out = s(f, 'output') === 'csv' ? 'csv' : 'xlsx';
+  setConfig(me.workspaceId, id, { headerRow: c!.config.headerRow, columns, output: out === 'xlsx' && !c!.has_template && c!.config.output === 'csv' ? 'csv' : out });
+  renameCarrier(me.workspaceId, id, s(f, 'name') || c!.name);
+  redirect(`/carriers/${id}?saved=1`);
+}
+
+export async function saveCarrierCities(id: number, f: FormData) {
+  const me = await requireOwner();
+  const r = setCities(me.workspaceId, id, s(f, 'cities'));
+  redirect(`/carriers/${id}?cities=${r.saved}&unmatched=${encodeURIComponent(r.unmatched.slice(0, 15).join('|'))}`);
+}
+
+export async function saveCarrierCreds(id: number, f: FormData) {
+  const me = await requireOwner();
+  const c = getCarrier(me.workspaceId, id); const conn = c?.connector ? CONNECTORS[c.connector] : null;
+  if (!c || !conn) redirect('/carriers');
+  setCreds(me.workspaceId, id, Object.fromEntries(conn!.fields.map((fld) => [fld.key, s(f, fld.key)])));
+  redirect(`/carriers/${id}?saved=1`);
+}
+
+export async function deleteCarrierAction(id: number, _fd?: FormData) {
+  const me = await requireOwner();
+  deleteCarrier(me.workspaceId, id);
+  redirect('/carriers');
+}
+
+/** Send one confirmed order through a carrier's API. */
+export async function sendViaCarrier(carrierId: number, f: FormData) {
+  const me = await requireSession();
+  const id = Number(s(f, 'id'));
+  const r = await sendOrderViaCarrier(me.workspaceId, me.userId, id, carrierId);
+  redirect(`/orders/${id}?ship=${r.ok ? 'ok' : r.error}`);
+}
+
+export async function bulkSendCarrier(carrierId: number, _fd?: FormData) {
+  const me = await requireSession();
+  const r = await bulkSend(me.workspaceId, me.userId, carrierId);
+  const fails = r.failed.slice(0, 8).map((x) => `${x.order_number}:${x.error}`).join(',');
+  redirect(`/orders?bulk=${r.sent}-${r.failed.length}${fails ? '&bf=' + encodeURIComponent(fails) : ''}`);
+}
+
+export async function trackNow() {
+  const me = await requireOwner();
+  const r = await trackWorkspace(me.workspaceId);
+  redirect(`/orders?tracked=${r.checked}-${r.delivered}-${r.returned}`);
 }

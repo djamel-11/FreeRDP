@@ -23,8 +23,8 @@ Moroccan phone normalization · filters/search · wa.me WhatsApp with editable D
 - **Confirmation mode** (`/confirm`): one order at a time. *To send* lane: big WhatsApp button, then the order moves on. *Awaiting reply* lane: ✅ Confirmed / ❌ Cancelled / 📵 No answer / ⏰ in 2h / tomorrow. Orders with earlier refusals show a warning.
 
 ## Shipping, follow-up and data sources
-- **Send all confirmed to AMEEX** (orders list): one click sends every confirmed order not yet sent (max 50): orders without an address or with an unknown city are skipped and listed with the reason.
-- **AMEEX tracking:** shipped orders are checked every 3 h (and on demand) via `Parcel Info`; "delivered"/"returned" are applied automatically and the raw AMEEX status is shown. AMEEX's public docs do not list status names or the response body, so the mapping is keyword-based and conservative (unknown → no change). **Verify with a real parcel** and adjust `mapAmeexStatus` / `extractStatusText` in `src/lib/ameexFlow.ts`.
+- **Send all confirmed** (orders list, one button per API-connected company): sends every confirmed order not yet sent (max 50): orders without an address or with a city unknown to that company are skipped and listed with the reason.
+- **Tracking** (for companies whose connector supports it): shipped orders are checked every 3 h (and on demand); "delivered"/"returned" are applied automatically and the raw AMEEX status is shown. AMEEX's public docs do not list status names or the response body, so the mapping is keyword-based and conservative (unknown → no change). **Verify with a real parcel** and adjust `mapAmeexStatus` / `extractStatusText` in `src/lib/ameexFlow.ts`.
 - **Confirmation mode has 3 lanes:** *To send* (new) · *Awaiting reply* (message sent) · *To call today* (no answer + callbacks that are due, with a big Call button). Cancelling asks for a reason (wrong number / changed mind / too expensive / fake / other) which feeds the dashboard.
 - **Dashboard:** delivered / returned / return rate and cancellation reasons.
 - **Google Sheets (no OAuth):** share the sheet ("anyone with the link can view"), paste the link in Settings; new rows are imported every 10 min or on demand. Only `docs.google.com` links are accepted; re-sorting the sheet does not create duplicates (identical rows are told apart by occurrence).
@@ -57,15 +57,16 @@ Sellers connect their own number (Settings → WhatsApp: **Phone number ID**, **
 
 Meta setup (platform owner, once): create a Meta app + WhatsApp product, verify the business, create a **utility template** (body with `{{1}}..{{4}}` plus quick-reply buttons "نعم، أؤكد" / "لا، ألغِ"), subscribe the webhook to the `messages` field. Per seller: either their own app token for the test, or Embedded Signup (incl. *Coexistence*, which keeps the number on the WhatsApp Business app and links it by QR) once you are an approved Tech Provider — not built yet. Meta bills API messages (templates; service messages beyond the free monthly allowance).
 
-## AMEEX API integration
-Settings → AMEEX: each seller enters their own **API ID + API Key** (key stored AES-256-GCM encrypted; set `AKKED_SECRET` in production).
-A confirmed order gets a **Send to AMEEX** button (`Add Parcel`, status becomes Shipped, parcel code saved).
-AMEEX needs a numeric **city id**: the official AMEEX list (604 ids, `src/lib/ameex-cities.ts`) is built in and is the canonical spelling; our aliases (Arabic/Darija/typos) in `src/lib/cities.ts` map onto it. `/admin` can still override ids (`id,name` lines). The list was copied from the AMEEX dashboard; re-copy if AMEEX adds cities.
-The public docs don't show response bodies or a cities endpoint, so the parcel-code parsing is best-effort (raw response kept in `ameex_error`).
-Verify with one real parcel before relying on it. `AMEEX_BASE_URL` overrides the host for tests only.
+## Delivery companies (any carrier)
+AMEEX is just the first built-in example. **Settings → Delivery companies** (`/carriers`) lets a seller add as many companies as they use:
+- **Any company, no code:** upload its Excel/CSV template (or paste its column names). Akked finds the header row (even under a title row), **suggests what each column means** (name, phone 06…, city, address, COD price, product…), and the seller confirms. Exports fill the company's *own* template (styling kept) or generate a CSV. A *sample file* button lets them check before the first real export.
+- **Company city lists:** paste its cities (`id,name` or just names); they are matched to customers' spellings automatically and the export writes the company's own spelling/id. Orders whose city isn't in the list are flagged.
+- **API connectors (optional):** `src/lib/connectors/`. A connector declares credential fields, `send`, optional `track`, `mapStatus`, an optional built-in city list and an optional export preset. Registered ones appear under *Add a company → built-in*, give a **Send to {company}** button (single + "send all confirmed") and automatic status tracking. **Adding a company = one new file + one line in `connectors/index.ts`** once you have its API docs. Today: AMEEX.
+- Credentials are stored AES-256-GCM encrypted per seller and company (set `AKKED_SECRET`). Existing single-AMEEX accounts are migrated into a carrier profile automatically.
+- AMEEX specifics: the official city list (604 ids) is built in; the public docs show no response bodies or status names, so parcel-code parsing and the status keyword mapping (`connectors/ameex.ts`) are best-effort — **verify with one real parcel**. `AMEEX_BASE_URL` overrides the host for tests only.
 
 ## Known gaps before going public
-- AMEEX export now uses the real `AMEEX_MODELE.xlsx` (kept in `templates/`). Phone is written as national format (06...) as text; confirm AMEEX accepts this, and whether PRIX is the COD amount.
+- Exports write phones as text in national format (06…) and PRIX as the order total; confirm each company accepts this, and whether its COD field should include delivery fees.
 - No native `.xlsx` import (paste cells or save as CSV). No email invites or callback reminders yet.
 - WhatsApp inbox is tested against a mock of Meta's API only; verify with a real test number before selling. Embedded Signup (one-click connect) is not built; sellers paste the token for now. Polling (6 s) instead of push for the inbox.
 - Tenant isolation is enforced in application queries (every query filters by `workspace_id`), not by DB-level RLS. Moving to Postgres/Supabase should add RLS.

@@ -1,21 +1,28 @@
 import { getSession } from '@/lib/auth';
-import path from 'node:path';
-import { FORMATS, toCsv, toXlsx } from '@/lib/exporters';
+import { FORMATS, toCsv } from '@/lib/exporters';
 import { exportableOrders } from '@/lib/orders';
+import { exportRowsFor, getCarrier, getTemplate, listCarriers } from '@/lib/carriers';
+import { renderExport, SAMPLE_ROWS } from '@/lib/exportEngine';
 
 export async function GET(req: Request) {
   const me = await getSession();
   if (!me) return new Response('Unauthorized', { status: 401 });
   if (me.role !== 'owner') return new Response('Forbidden', { status: 403 }); // agents cannot download the customer list
-  const key = new URL(req.url).searchParams.get('format') ?? 'generic';
-  const fmt = FORMATS[key];
-  if (!fmt) return new Response('Unknown format', { status: 400 });
-  const orders = exportableOrders(me.workspaceId, true);
-  const date = new Date().toISOString().slice(0, 10);
-  if (key === 'ameex') {
-    const buf = await toXlsx(fmt, orders, path.join(process.cwd(), 'templates', 'AMEEX_MODELE.xlsx'));
-    return new Response(new Uint8Array(buf), { headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'content-disposition': `attachment; filename="akked-ameex-${date}.xlsx"` } });
+  const q = new URL(req.url).searchParams; const date = new Date().toISOString().slice(0, 10);
+
+  // A delivery company profile (any company: its own columns/template) — or the legacy ?format=ameex alias.
+  let carrierId = Number(q.get('carrier') ?? 0);
+  if (!carrierId && q.get('format') === 'ameex') carrierId = listCarriers(me.workspaceId).find((c) => c.connector === 'ameex')?.id ?? 0;
+  if (carrierId) {
+    const c = getCarrier(me.workspaceId, carrierId); if (!c) return new Response('Not found', { status: 404 });
+    const sample = q.get('sample') === '1';
+    const { rows, unmatched } = sample ? { rows: SAMPLE_ROWS, unmatched: [] as string[] } : exportRowsFor(me.workspaceId, c, true);
+    const out = await renderExport(c.config, getTemplate(me.workspaceId, c.id), rows);
+    const slug = c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'carrier';
+    return new Response(new Uint8Array(out.bytes), { headers: { 'content-type': out.mime, 'content-disposition': `attachment; filename="akked-${slug}-${sample ? 'sample' : date}.${out.ext}"`, 'x-unmatched-orders': unmatched.join(','), 'cache-control': 'no-store' } });
   }
-  const csv = toCsv(fmt, orders);
-  return new Response(csv, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="akked-${key}-${date}.csv"` } });
+
+  const fmt = FORMATS[q.get('format') ?? 'generic'];
+  if (!fmt || fmt.key !== 'generic') return new Response('Unknown format', { status: 400 });
+  return new Response(toCsv(fmt, exportableOrders(me.workspaceId, true)), { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="akked-generic-${date}.csv"` } });
 }

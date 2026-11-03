@@ -4,7 +4,9 @@ import { getT, STATUSES } from '@/lib/i18n';
 import { getWorkspace, listOrders, unmatchedCities, monthlyUsage, teamMembers, PLANS, type PlanKey } from '@/lib/orders';
 import { isActive } from '@/lib/plans';
 import { db } from '@/lib/db';
-import { bulkSendAmeex, listStatus, trackAmeexNow } from '../actions';
+import { bulkSendCarrier, listStatus, trackNow } from '../actions';
+import { listCarriers } from '@/lib/carriers';
+import { CONNECTORS } from '@/lib/connectors';
 import Onboarding from '../onboarding';
 
 export default async function Orders({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
@@ -16,8 +18,10 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
   const agents = teamMembers(me.workspaceId);
   const cities = db().prepare(`SELECT DISTINCT city FROM orders WHERE workspace_id = ? AND city <> '' ORDER BY city`).all(me.workspaceId) as any[];
   const badCities = unmatchedCities(me.workspaceId);
-  const unsent = (db().prepare(`SELECT COUNT(*) c FROM orders WHERE workspace_id = ? AND status = 'confirmed' AND ameex_parcel_code IS NULL`).get(me.workspaceId) as any).c as number;
-  const shipped = (db().prepare(`SELECT COUNT(*) c FROM orders WHERE workspace_id = ? AND status = 'shipped' AND ameex_parcel_code IS NOT NULL AND ameex_parcel_code <> 'SENT'`).get(me.workspaceId) as any).c as number;
+  const unsent = (db().prepare(`SELECT COUNT(*) c FROM orders WHERE workspace_id = ? AND status = 'confirmed' AND parcel_code IS NULL`).get(me.workspaceId) as any).c as number;
+  const shipped = (db().prepare(`SELECT COUNT(*) c FROM orders WHERE workspace_id = ? AND status = 'shipped' AND parcel_code IS NOT NULL AND parcel_code <> 'SENT'`).get(me.workspaceId) as any).c as number;
+  const carriers = listCarriers(me.workspaceId); const apiCarriers = carriers.filter((c) => c.connector && c.has_creds);
+  const canTrack = apiCarriers.some((c) => CONNECTORS[c.connector!]?.track);
   const [bs, bf] = (sp.bulk ?? '').split('-'); const [tc, td, tr] = (sp.tracked ?? '').split('-');
   const used = monthlyUsage(me.workspaceId); const lim = PLANS[ws.plan as PlanKey].orders;
   return (<>
@@ -32,12 +36,13 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
       <Link className="btn sec" href="/confirm">{t.startConfirm}</Link>
       <Link className="btn sec" href="/orders/import">{t.import}</Link>
       <Link className="btn sec" href="/orders/new">{t.fullForm}</Link>
-      {me.role === 'owner' && <><a className="btn sec" href="/export?format=ameex">{t.export} AMEEX (xlsx)</a>
-      <a className="btn sec" href="/export?format=generic">{t.export} CSV</a></>}
+      {me.role === 'owner' && <>{carriers.map((c) => <a key={c.id} className="btn sec" href={`/export?carrier=${c.id}`}>{t.exportFor} {c.name}</a>)}
+      <a className="btn sec" href="/export?format=generic">{t.export} CSV</a>
+      <Link className="btn sec" href="/carriers">🚚 {t.carriers}</Link></>}
     </div>
-    {(unsent > 0 || (shipped > 0 && me.role === 'owner')) && <div className="inline" style={{ marginBottom: 12 }}>
-      {unsent > 0 && <form action={bulkSendAmeex}><button>🚚 {t.bulkSend} ({unsent})</button></form>}
-      {shipped > 0 && me.role === 'owner' && <form action={trackAmeexNow}><button className="sec">🔄 {t.trackNow} ({shipped})</button></form>}
+    {((unsent > 0 && apiCarriers.length > 0) || (shipped > 0 && canTrack && me.role === 'owner')) && <div className="inline" style={{ marginBottom: 12 }}>
+      {unsent > 0 && apiCarriers.map((c) => <form key={c.id} action={bulkSendCarrier.bind(null, c.id)}><button>🚚 {t.bulkSend.replace('AMEEX', c.name)} ({unsent})</button></form>)}
+      {shipped > 0 && canTrack && me.role === 'owner' && <form action={trackNow}><button className="sec">🔄 {t.trackNow.replace('AMEEX', '')} ({shipped})</button></form>}
     </div>}
     <p className="muted">{t.plan}: {PLANS[ws.plan as PlanKey].name} · {t.usage}: {used}/{lim === Infinity ? '∞' : lim}</p>
     <details className="card" open={Object.keys(keep).length > 0}><summary><strong>🔎 {t.search} / {t.filter}</strong></summary>
@@ -59,7 +64,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
             <div className="tags">
               <span className={`badge ${o.status}`}>{(t as any)['s_' + o.status]}</span>
               {o.refusals > 0 && <span className="badge bad">⚠ {t.refusedBefore}{o.refusals > 1 ? ` ×${o.refusals}` : ''}</span>}
-              {o.ameex_status && <span className="badge">🚚 {o.ameex_status}</span>}
+              {o.carrier_status && <span className="badge">🚚 {o.carrier_status}</span>}
             </div>
             <div className="muted"><bdi dir="ltr">{o.phone}</bdi> · {o.city}</div>
             <div className="muted"><bdi dir="auto">{o.quantity}× {o.products} {o.size} {o.color}</bdi></div>

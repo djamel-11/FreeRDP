@@ -4,7 +4,7 @@ import { renderTemplate, waLink } from '../src/lib/templates';
 import { canAddOrders } from '../src/lib/plans';
 import { ameexIdFor, canonicalCity } from '../src/lib/cities';
 import { parseOrders } from '../src/lib/import';
-import { FORMATS, toCsv, toXlsx } from '../src/lib/exporters';
+import { FORMATS, toCsv } from '../src/lib/exporters';
 
 describe('phone', () => {
   it('normalizes', () => {
@@ -39,19 +39,9 @@ describe('import/export', () => {
     expect(r.rows).toHaveLength(1); expect(r.errors).toEqual([{ line: 3, reason: 'invalid_phone' }]);
     expect(r.rows[0]).toMatchObject({ phone: '+212612345678', price: 199 });
   });
-  it('exports with national phone and formula guard', () => {
-    const csv = toCsv(FORMATS.ameex, [{ order_number: 'AK-1', customer_name: '=cmd', phone: '+212612345678', city: 'Casa', address: '', products: 'Robe', size: 'M', color: '', quantity: 1, price: 199, notes: '' }]);
-    expect(csv).toContain('0612345678');
-    expect(csv.split('\r\n')[0].replace('\uFEFF','')).toBe('NUMERO DE COMMANDE,DESTINATAIRE,TELEPHONE,ADRESSE,PRIX,VILLE,COMMENTAIRE,MARCHANDISE'); expect(csv).toContain("'=cmd");
-  });
-  it('builds AMEEX xlsx from the official template', async () => {
-    const ExcelJS = (await import('exceljs')).default;
-    const o = { order_number: 'AK-1', customer_name: 'Sara', phone: '+212612345678', city: 'Casa', address: 'Rue 1', products: 'Robe', size: 'M', color: '', quantity: 2, price: 199, notes: 'n' };
-    const buf = await toXlsx(FORMATS.ameex, [o], 'templates/AMEEX_MODELE.xlsx');
-    const wb = new ExcelJS.Workbook(); await wb.xlsx.load(buf as any);
-    const ws = wb.worksheets[0];
-    expect(ws.getRow(1).getCell(1).value).toBe('NUMERO DE COMMANDE');
-    expect(ws.getRow(2).values).toEqual([undefined, 'AK-1', 'Sara', '0612345678', 'Rue 1', 199, 'Casablanca', 'n', 'Robe M x2']);
+  it('generic CSV export has a BOM, escapes and guards formulas', () => {
+    const csv = toCsv(FORMATS.generic, [{ order_number: 'AK-1', customer_name: '=cmd', phone: '+212612345678', city: 'Casa', address: 'a,b', products: 'Robe', size: 'M', color: '', quantity: 1, price: 199, notes: '' }]);
+    expect(csv.charCodeAt(0)).toBe(0xfeff); expect(csv).toContain("'=cmd"); expect(csv).toContain('"a,b"');
   });
 });
 

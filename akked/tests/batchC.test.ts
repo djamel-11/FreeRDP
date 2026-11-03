@@ -2,17 +2,28 @@ import { beforeAll, describe, expect, it } from 'vitest';
 process.env.AKKED_DB = ':memory:';
 process.env.AKKED_SECRET = 'test-secret-test-secret';
 
-let db: any, orders: any, flow: any, sheets: any, secrets: any;
+let db: any, orders: any, flow: any, sheets: any, secrets: any, carriers: any, ameexC: any, cid: number;
 const ins = (ws: number, n: string, status: string, extra: Record<string, any> = {}) => {
   const o: any = { city: 'Casablanca', address: 'Rue 1', price: 100, ...extra };
-  db().prepare(`INSERT INTO orders (workspace_id, order_number, customer_name, phone, city, address, price, status, callback_at, ameex_parcel_code) VALUES (?,?,?,?,?,?,?,?,?,?)`)
-    .run(ws, n, 'C' + n, '+2126000000' + String(n).padStart(2, '0'), o.city, o.address, o.price, status, o.callback_at ?? null, o.code ?? null);
+  db().prepare(`INSERT INTO orders (workspace_id, order_number, customer_name, phone, city, address, price, status, callback_at, parcel_code, carrier_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+    .run(ws, n, 'C' + n, '+2126000000' + String(n).padStart(2, '0'), o.city, o.address, o.price, status, o.callback_at ?? null, o.code ?? null, o.code ? cid : null);
 };
 beforeAll(async () => {
-  db = (await import('../src/lib/db')).db; orders = await import('../src/lib/orders'); flow = await import('../src/lib/ameexFlow');
+  db = (await import('../src/lib/db')).db; orders = await import('../src/lib/orders'); flow = await import('../src/lib/carrierFlow'); carriers = await import('../src/lib/carriers'); ameexC = await import('../src/lib/connectors/ameex');
   sheets = await import('../src/lib/sheets'); secrets = await import('../src/lib/secrets');
   db().prepare(`INSERT INTO workspaces (id, name, plan, status, period_end, ameex_api_id, ameex_api_key_enc) VALUES (1,'S','pro','active','2099-01-01','77',?)`).run(secrets.encrypt('KEY'));
   db().prepare(`INSERT INTO workspaces (id, name, plan, status, period_end) VALUES (2,'Nokey','pro','active','2099-01-01')`).run();
+  cid = carriers.listCarriers(1)[0].id; // legacy AMEEX credentials are migrated into a carrier profile on first use
+});
+
+describe('legacy AMEEX settings → carrier profile', () => {
+  it('is created once with the old credentials and AMEEX export mapping', () => {
+    const list = carriers.listCarriers(1); expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({ name: 'AMEEX', connector: 'ameex', has_creds: true });
+    expect(list[0].config.columns.map((c: any) => c.header)).toContain('MARCHANDISE');
+    expect(carriers.getCreds(1, list[0].id)).toEqual({ apiId: '77', apiKey: 'KEY' });
+    expect(carriers.listCarriers(1)).toHaveLength(1); // not duplicated
+  });
 });
 
 describe('lanes', () => {
@@ -25,12 +36,12 @@ describe('lanes', () => {
 
 describe('AMEEX status mapping', () => {
   it('is conservative', () => {
-    for (const s of ['Livré', 'Delivered', 'تم التسليم', 'colis livré']) expect(flow.mapAmeexStatus(s)).toBe('delivered');
-    for (const s of ['Retourné', 'Retour', 'Refusé', 'Returned', 'مرتجع', 'Non livré']) expect(flow.mapAmeexStatus(s)).toBe('returned');
-    for (const s of ['En cours', 'Ramassé', 'In transit', '', null]) expect(flow.mapAmeexStatus(s as any)).toBeNull();
-    expect(flow.extractStatusText({ data: { parcel: { status: { name: 'Livré' } } } })).toBe('Livré');
-    expect(flow.extractStatusText({ x: [{ statut: 'Retour' }] })).toBe('Retour');
-    expect(flow.extractStatusText('nope')).toBeNull();
+    for (const s of ['Livré', 'Delivered', 'تم التسليم', 'colis livré']) expect(ameexC.mapAmeexStatus(s)).toBe('delivered');
+    for (const s of ['Retourné', 'Retour', 'Refusé', 'Returned', 'مرتجع', 'Non livré']) expect(ameexC.mapAmeexStatus(s)).toBe('returned');
+    for (const s of ['En cours', 'Ramassé', 'In transit', '', null]) expect(ameexC.mapAmeexStatus(s as any)).toBeNull();
+    expect(ameexC.extractStatusText({ data: { parcel: { status: { name: 'Livré' } } } })).toBe('Livré');
+    expect(ameexC.extractStatusText({ x: [{ statut: 'Retour' }] })).toBe('Retour');
+    expect(ameexC.extractStatusText('nope')).toBeNull();
   });
 });
 
@@ -39,18 +50,18 @@ describe('bulk send to AMEEX', () => {
     ins(1, '10', 'confirmed'); ins(1, '11', 'confirmed', { address: '' }); ins(1, '12', 'confirmed', { city: 'Atlantis' }); ins(1, '13', 'confirmed');
     const calls: string[] = []; let n = 0;
     const fake = (async (url: string, init: any) => { calls.push(init.headers['C-Api-Id']); return new Response(JSON.stringify({ data: { ParcelCode: 'P' + ++n } }), { status: 200 }); }) as any;
-    const r = await flow.bulkSendToAmeex(1, null, fake);
+    const r = await flow.bulkSend(1, null, cid, fake);
     expect(r.sent).toBe(2); expect(calls).toEqual(['77', '77']);
     expect(r.failed.map((f: any) => f.error).sort()).toEqual(['noaddress', 'nocity']);
-    const sent = db().prepare(`SELECT status, ameex_parcel_code FROM orders WHERE order_number = '10'`).get();
-    expect(sent).toMatchObject({ status: 'shipped', ameex_parcel_code: 'P1' });
+    const sent = db().prepare(`SELECT status, parcel_code FROM orders WHERE order_number = '10'`).get();
+    expect(sent).toMatchObject({ status: 'shipped', parcel_code: 'P1' });
     expect(db().prepare(`SELECT status FROM orders WHERE order_number = '11'`).get().status).toBe('confirmed');
-    expect((await flow.bulkSendToAmeex(1, null, fake)).sent).toBe(0); // nothing is sent twice
+    expect((await flow.bulkSend(1, null, cid, fake)).sent).toBe(0); // nothing is sent twice
   });
   it('stops cleanly without credentials and never touches another tenant', async () => {
     ins(2, '20', 'confirmed');
-    const r = await flow.bulkSendToAmeex(2, null, (async () => { throw new Error('must not call'); }) as any);
-    expect(r.sent).toBe(0); expect(r.failed[0].error).toBe('nocreds');
+    const r = await flow.bulkSend(2, null, 999, (async () => { throw new Error('must not call'); }) as any);
+    expect(r.sent).toBe(0); expect(r.failed[0].error).toBe('nocarrier');
   });
 });
 
@@ -61,10 +72,10 @@ describe('tracking', () => {
     const fake = (async (url: string) => new Response(JSON.stringify({ status: map[decodeURIComponent(url.split('ParcelCode=')[1])] }), { status: 200 })) as any;
     const r = await flow.trackWorkspace(1, fake);
     expect(r).toMatchObject({ checked: 5, delivered: 1, returned: 1 });
-    const st = (n: string) => db().prepare(`SELECT status, ameex_status FROM orders WHERE order_number = ?`).get(n);
-    expect(st('30')).toMatchObject({ status: 'delivered', ameex_status: 'Livré' });
+    const st = (n: string) => db().prepare(`SELECT status, carrier_status FROM orders WHERE order_number = ?`).get(n);
+    expect(st('30')).toMatchObject({ status: 'delivered', carrier_status: 'Livré' });
     expect(st('31').status).toBe('returned');
-    expect(st('32')).toMatchObject({ status: 'shipped', ameex_status: 'En cours de livraison' });
+    expect(st('32')).toMatchObject({ status: 'shipped', carrier_status: 'En cours de livraison' });
     expect(st('33').status).toBe('shipped'); // placeholder code can't be tracked
     const s = orders.stats(1); expect(s.delivered).toBe(1); expect(s.returned).toBe(1); expect(s.returnRate).toBe(0.5);
   });

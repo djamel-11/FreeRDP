@@ -68,8 +68,18 @@ export function db(): Db {
   );
   CREATE INDEX IF NOT EXISTS idx_payments_ws ON payments(workspace_id, id);`);
   addCol('orders', 'cancel_reason', 'TEXT');
-  addCol('orders', 'ameex_status', 'TEXT');
-  addCol('orders', 'ameex_checked_at', 'TEXT');
+  addCol('orders', 'carrier_status', 'TEXT');
+  addCol('orders', 'carrier_checked_at', 'TEXT');
+  addCol('orders', 'carrier_id', 'INTEGER');
+  d.exec(`CREATE TABLE IF NOT EXISTS carriers (
+    id INTEGER PRIMARY KEY, workspace_id INTEGER NOT NULL REFERENCES workspaces(id), name TEXT NOT NULL, connector TEXT, creds_enc TEXT,
+    config TEXT NOT NULL DEFAULT '{}', template BLOB, template_name TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+  CREATE INDEX IF NOT EXISTS idx_carriers_ws ON carriers(workspace_id);
+  CREATE TABLE IF NOT EXISTS carrier_cities (
+    carrier_id INTEGER NOT NULL REFERENCES carriers(id) ON DELETE CASCADE, canonical TEXT NOT NULL, carrier_city_id TEXT, carrier_city_name TEXT,
+    PRIMARY KEY (carrier_id, canonical)
+  );`);
   addCol('workspaces', 'sheet_url', 'TEXT');
   addCol('workspaces', 'sheet_last_sync', 'TEXT');
   addCol('workspaces', 'sheet_last_result', 'TEXT');
@@ -90,6 +100,9 @@ export function db(): Db {
   CREATE INDEX IF NOT EXISTS idx_wa_msg_phone ON wa_messages(workspace_id, phone, id);
   CREATE UNIQUE INDEX IF NOT EXISTS idx_ws_pnid ON workspaces(wa_phone_number_id) WHERE wa_phone_number_id IS NOT NULL;`);
   d.exec(`CREATE TABLE IF NOT EXISTS ameex_cities (canonical TEXT PRIMARY KEY, ameex_id INTEGER NOT NULL)`);
+  const renames: [string, string][] = [['ameex_parcel_code', 'parcel_code'], ['ameex_error', 'carrier_error']];
+  for (const [from, to] of renames) { const c = cols('orders'); if (c.includes(from) && !c.includes(to)) d.exec(`ALTER TABLE orders RENAME COLUMN ${from} TO ${to}`); else if (!c.includes(to)) addCol('orders', to, 'TEXT'); }
+  const c2 = cols('orders'); if (c2.includes('ameex_status') && !c2.includes('carrier_status')) d.exec('ALTER TABLE orders RENAME COLUMN ameex_status TO carrier_status');
   g.__akkedDb = d;
   return d;
 }

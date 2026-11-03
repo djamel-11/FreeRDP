@@ -1,5 +1,5 @@
 import { db } from './db';
-import { ameexIdFor, canonicalCity } from './cities';
+import { canonicalCity } from './cities';
 import { canAddOrders, PLANS, type PlanKey, type WorkspaceState } from './plans';
 import type { ParsedOrder } from './import';
 import { normalizePhone } from './phone';
@@ -102,13 +102,6 @@ export function unmatchedCities(wsId: number): { id: number; order_number: strin
   return rows.filter((r) => !canonicalCity(r.city));
 }
 
-/** Admin-imported override (table) wins; otherwise the built-in official AMEEX list. */
-export function ameexCityId(city: string): number | null {
-  const canon = canonicalCity(city);
-  if (!canon) return null;
-  const r = db().prepare('SELECT ameex_id FROM ameex_cities WHERE canonical = ?').get(canon) as any;
-  return r ? r.ameex_id : ameexIdFor(canon);
-}
 
 const localNow = () => { const d = new Date(); const z = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; };
 

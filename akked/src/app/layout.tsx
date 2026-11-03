@@ -29,6 +29,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {(me.role === 'owner' || me.isAdmin) && <>
               <Link href="/dashboard">{t.dashboard}</Link>
               <Link href="/team">{t.team}</Link>
+              <Link href="/carriers">{t.carriers}</Link>
               <Link href="/billing">{t.billing}</Link>
               <Link href="/settings">{t.settings}</Link>
             </>}

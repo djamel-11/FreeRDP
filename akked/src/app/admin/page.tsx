@@ -7,12 +7,11 @@ import { PLANS, type PlanKey } from '@/lib/plans';
 import { pendingPayments } from '@/lib/billing';
 import { getSetting } from '@/lib/settings';
 import { cookies } from 'next/headers';
-import { adminDecidePayment, adminImportCityIds, adminResetOwnerPassword, adminSaveSettings, adminSetSubscription } from '../actions';
+import { adminDecidePayment, adminResetOwnerPassword, adminSaveSettings, adminSetSubscription } from '../actions';
 export default async function Admin({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const sp = await searchParams;
   const tmp = (await cookies()).get('akked_tmp')?.value?.split('|');
   const pay = pendingPayments();
-  const nIds = (db().prepare('SELECT COUNT(*) c FROM ameex_cities').get() as any).c;
   await requireAdmin(); const { t } = await getT();
   const list = db().prepare(`SELECT w.*, (SELECT email FROM users WHERE workspace_id = w.id AND role='owner' LIMIT 1) owner,
     (SELECT COUNT(*) FROM users WHERE workspace_id = w.id) users FROM workspaces w ORDER BY id DESC`).all() as any[];
@@ -37,9 +36,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Re
           <div><label>{t.jurisdiction}</label><input name="jurisdiction" defaultValue={getSetting('jurisdiction')} /></div></div>
         <p><button>{t.save}</button></p></form>
       <p className="muted">{t.backupHint}</p><p><a className="btn sec" href="/admin/backup">⬇ {t.downloadBackup}</a></p></div>
-    <div className="card"><h2>AMEEX city IDs ({nIds})</h2>
-      {sp.cities_ok && <div className="ok">OK: {sp.cities_ok}{sp.cities_bad ? ` · unmatched: ${sp.cities_bad}` : ''}</div>}
-      <form action={adminImportCityIds}><textarea name="text" rows={5} dir="ltr" placeholder={'1,Casablanca\n2,Rabat'} /><p><button>Import</button></p></form></div>
+
     {list.map((w) => (
     <div className="card" key={w.id}><strong>{w.name}</strong> <span className="badge">{w.status}</span>
       <div className="muted">{w.owner} · {w.plan} · {t.usage}: {monthlyUsage(w.id)} · users: {w.users} · {t.periodEnd}: {String(w.period_end).slice(0, 10)}</div>
