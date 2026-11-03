@@ -271,3 +271,11 @@ export async function inboxStatus(id: number, status: string, digits: string, _f
   if (['confirmed', 'cancelled', 'no_answer'].includes(status)) changeStatus(me.workspaceId, me.userId, id, status);
   redirect(`/inbox/${digits.replace(/\D/g, '')}`);
 }
+
+/** One-tap status from the orders list; returns to the same filtered list. */
+export async function listStatus(id: number, status: string, back: string, _fd?: FormData) {
+  const me = await requireSession();
+  if (['confirmed', 'cancelled', 'no_answer'].includes(status)) changeStatus(me.workspaceId, me.userId, id, status);
+  revalidatePath('/orders');
+  redirect(back.startsWith('/orders') ? back : '/orders');
+}

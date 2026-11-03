@@ -25,3 +25,5 @@ form.inline>div{flex:1 1 130px}form.inline>div input{width:100%}
 .bub{max-width:80%;padding:8px 12px;border-radius:12px;white-space:pre-wrap;word-break:break-word}
 .bub.in{align-self:flex-start;background:#f1f5f9}.bub.out{align-self:flex-end;background:#dcfce7}
 .bub .meta{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+a.plain{color:inherit;display:block}.acts{display:flex;gap:6px;margin-top:8px}.acts form{flex:1}
+button.mini{width:100%;padding:8px 4px;font-size:14px;border-radius:8px}

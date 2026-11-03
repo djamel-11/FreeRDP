@@ -4,11 +4,14 @@ import { getT, STATUSES } from '@/lib/i18n';
 import { getWorkspace, listOrders, unmatchedCities, monthlyUsage, teamMembers, PLANS, type PlanKey } from '@/lib/orders';
 import { isActive } from '@/lib/plans';
 import { db } from '@/lib/db';
+import { listStatus } from '../actions';
 
 export default async function Orders({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const me = await requireSession(); const { t } = await getT(); const sp = await searchParams;
   const ws = getWorkspace(me.workspaceId);
   const rows = listOrders(me.workspaceId, sp);
+  const keep = Object.fromEntries(Object.entries(sp).filter(([k, v]) => v && !['added', 'skipped'].includes(k)));
+  const back = '/orders' + (Object.keys(keep).length ? '?' + new URLSearchParams(keep).toString() : '');
   const agents = teamMembers(me.workspaceId);
   const cities = db().prepare(`SELECT DISTINCT city FROM orders WHERE workspace_id = ? AND city <> '' ORDER BY city`).all(me.workspaceId) as any[];
   const badCities = unmatchedCities(me.workspaceId);
@@ -26,7 +29,8 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
       <a className="btn sec" href="/export?format=generic">{t.export} CSV</a>
     </div>
     <p className="muted">{t.plan}: {PLANS[ws.plan as PlanKey].name} · {t.usage}: {used}/{lim === Infinity ? '∞' : lim}</p>
-    <form className="card inline" method="get">
+    <details className="card" open={Object.keys(keep).length > 0}><summary><strong>🔎 {t.search} / {t.filter}</strong></summary>
+    <form className="inline" method="get" style={{ marginTop: 8 }}>
       <input name="q" placeholder={t.search} defaultValue={sp.q} />
       <select name="status" defaultValue={sp.status ?? ''}><option value="">{t.status}: {t.all}</option>{STATUSES.map((s) => <option key={s} value={s}>{(t as any)['s_' + s]}</option>)}</select>
       <select name="city" defaultValue={sp.city ?? ''}><option value="">{t.city}: {t.all}</option>{cities.map((c) => <option key={c.city}>{c.city}</option>)}</select>
@@ -34,18 +38,26 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
       <div><label>{t.from}</label><input type="date" name="from" defaultValue={sp.from} /></div>
       <div><label>{t.to}</label><input type="date" name="to" defaultValue={sp.to} /></div>
       <div style={{ flexBasis: '100%' }}><button className="sec" style={{ width: '100%' }}>{t.filter}</button></div>
-    </form>
+    </form></details>
     <div className="card">
       {rows.length === 0 && <p className="muted">{t.none}</p>}
       {rows.map((o) => (
-        <Link key={o.id} href={`/orders/${o.id}`} className="o">
-          <div className="top"><bdi className="nm">{o.customer_name}</bdi><span className="price" dir="ltr">{o.price} MAD</span></div>
-          <div className="tags">
-            <span className={`badge ${o.status}`}>{(t as any)['s_' + o.status]}</span>
-            {o.refusals > 0 && <span className="badge bad">⚠ {t.refusedBefore}{o.refusals > 1 ? ` ×${o.refusals}` : ''}</span>}
-          </div>
-          <div className="muted"><bdi dir="ltr">{o.phone}</bdi> · {o.city}</div>
-          <div className="muted"><bdi dir="auto">{o.quantity}× {o.products} {o.size} {o.color}</bdi></div>
-        </Link>))}
+        <div key={o.id} className="o">
+          <Link href={`/orders/${o.id}`} className="plain">
+            <div className="top"><bdi className="nm">{o.customer_name}</bdi><span className="price" dir="ltr">{o.price} MAD</span></div>
+            <div className="tags">
+              <span className={`badge ${o.status}`}>{(t as any)['s_' + o.status]}</span>
+              {o.refusals > 0 && <span className="badge bad">⚠ {t.refusedBefore}{o.refusals > 1 ? ` ×${o.refusals}` : ''}</span>}
+            </div>
+            <div className="muted"><bdi dir="ltr">{o.phone}</bdi> · {o.city}</div>
+            <div className="muted"><bdi dir="auto">{o.quantity}× {o.products} {o.size} {o.color}</bdi></div>
+          </Link>
+          {['new', 'message_sent', 'no_answer', 'callback'].includes(o.status) && (
+            <div className="acts">
+              <form action={listStatus.bind(null, o.id, 'confirmed', back)}><button className="mini ok">{t.btnConfirm}</button></form>
+              <form action={listStatus.bind(null, o.id, 'cancelled', back)}><button className="mini danger">{t.btnCancel}</button></form>
+              <form action={listStatus.bind(null, o.id, 'no_answer', back)}><button className="mini sec">{t.btnNoAnswer}</button></form>
+            </div>)}
+        </div>))}
     </div></>);
 }
