@@ -80,76 +80,116 @@ button.add{margin-top:10px;width:100%;border:1.5px dashed var(--ui);color:var(--
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   @page{size:A4;margin:0}
 }
+.langsw{display:flex;justify-content:center;gap:6px;margin-bottom:18px}
+.langsw button{border:1px solid #ffffff66;background:#ffffff1f;color:#fff;padding:5px 14px;border-radius:99px;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}
+.langsw button.on{background:#fff;color:#4f46e5}
 </style>
 </head>
 <body>
 <header class="hero">
-  <span class="pill">مجاني 100% · بدون تسجيل · بدون علامة مائية</span>
-  <h1>سيرة مجانًا<small>FREE CV BUILDER</small></h1>
-  <p>أنشئ سيرتك الذاتية الاحترافية في دقائق وحمّلها PDF. بياناتك تبقى على جهازك ولا تُرسل لأي مكان.</p>
-  <div class="feats"><span>معاينة فورية</span><span>عربي وإنجليزي</span><span>جاهزة للطباعة A4</span></div>
-  <a class="cta" href="#form">ابدأ الآن مجانًا</a>
+  <div class="langsw" id="langsw"><button data-l="ar">العربية</button><button data-l="en">English</button><button data-l="fr">Français</button></div>
+  <span class="pill" data-t="pill"></span>
+  <h1><span data-t="brand"></span><small data-t="brand2"></small></h1>
+  <p data-t="lead"></p>
+  <div class="feats"><span data-t="f1"></span><span data-t="f2"></span><span data-t="f3"></span></div>
+  <a class="cta" href="#form" data-t="cta"></a>
 </header>
 <div class="app">
   <section class="panel" id="form">
     
     <div class="row top">
-      <div><label>اللغة / الاتجاه</label>
-        <select id="dir"><option value="rtl">عربي (يمين لليسار)</option><option value="ltr">English (LTR)</option></select></div>
-      <div><label>اللون</label>
+      <input type="hidden" id="lang" value="ar"><div><label data-t="tpl"></label><select id="tplsel"></select></div>
+      <div><label data-t="color"></label>
         <select id="color" hidden><option value="#4f46e5">نيلي</option><option value="#0891b2">سماوي</option><option value="#059669">أخضر</option><option value="#7c3aed">بنفسجي</option><option value="#db2777">وردي</option><option value="#b91c1c">أحمر</option><option value="#0f172a">أسود</option></select>
         <div class="colors" id="sw"></div></div>
     </div>
-    <label>الشكل</label>
-    <select id="tpl"><option value="modern">عصري</option><option value="classic">كلاسيكي</option></select>
+    <input type="hidden" id="tpl" value="modern">
 
-    <div class="step"><i>1</i>البيانات الشخصية</div><fieldset>
-      <label>الاسم الكامل</label><input id="name">
-      <label>المسمى الوظيفي</label><input id="title">
+    <div class="step"><i>1</i><span data-t="s1"></span></div><fieldset>
+      <label data-t="name"></label><input id="name">
+      <label data-t="jobtitle"></label><input id="title">
       <div class="row">
-        <div><label>الهاتف</label><input id="phone" dir="ltr"></div>
-        <div><label>البريد</label><input id="email" dir="ltr"></div>
+        <div><label data-t="phone"></label><input id="phone" dir="ltr"></div>
+        <div><label data-t="email"></label><input id="email" dir="ltr"></div>
       </div>
-      <label>المدينة / الدولة</label><input id="city">
-      <label>رابط (لينكدإن أو موقع)</label><input id="link" dir="ltr">
+      <label data-t="city"></label><input id="city">
+      <label data-t="link"></label><input id="link" dir="ltr">
     </fieldset>
 
-    <div class="step"><i>2</i>نبذة عنك</div><fieldset>
-      <textarea id="summary" placeholder="جملتان أو ثلاث عن خبرتك وما تبحث عنه"></textarea>
+    <div class="step"><i>2</i><span data-t="s2"></span></div><fieldset>
+      <textarea id="summary" data-ph="ph_sum"></textarea>
     </fieldset>
 
-    <div class="step"><i>3</i>الخبرات</div><fieldset><div id="exp"></div>
-      <button class="add" data-add="exp">+ إضافة خبرة</button></fieldset>
+    <div class="step"><i>3</i><span data-t="s3"></span></div><fieldset><div id="exp"></div>
+      <button class="add" data-add="exp" data-t="addexp"></button></fieldset>
 
-    <div class="step"><i>4</i>التعليم</div><fieldset><div id="edu"></div>
-      <button class="add" data-add="edu">+ إضافة مؤهل</button></fieldset>
+    <div class="step"><i>4</i><span data-t="s4"></span></div><fieldset><div id="edu"></div>
+      <button class="add" data-add="edu" data-t="addedu"></button></fieldset>
 
-    <div class="step"><i>5</i>المهارات</div><fieldset>
-      <label>افصل بينها بفاصلة</label>
-      <textarea id="skills" placeholder="Excel, خدمة العملاء, اللغة الإنجليزية"></textarea>
+    <div class="step"><i>5</i><span data-t="s5"></span></div><fieldset>
+      <label data-t="sk_hint"></label>
+      <textarea id="skills" data-ph="ph_sk"></textarea>
     </fieldset>
 
-    <div class="step"><i>6</i>اللغات</div><fieldset>
-      <textarea id="langs" placeholder="العربية (الأم)، الإنجليزية (جيد جدًا)"></textarea>
+    <div class="step"><i>6</i><span data-t="s6"></span></div><fieldset>
+      <textarea id="langs" data-ph="ph_lg"></textarea>
     </fieldset>
 
     <div class="actions">
-      <button class="pdf" id="print">تنزيل PDF</button>
-      <button class="clr" id="clear">مسح الكل</button>
+      <button class="pdf" id="print" data-t="pdf"></button>
+      <button class="clr" id="clear" data-t="clear"></button>
     </div>
-    <p class="note">عند الضغط على "تنزيل PDF" اختر "حفظ كـ PDF" كوجهة الطباعة. تُحفظ بياناتك في متصفحك فقط لتجدها عند عودتك.</p>
+    <p class="note" data-t="note"></p>
   </section>
 
-  <section class="preview"><div class="pvhead"><span>المعاينة المباشرة</span><span>A4</span></div><div class="sheet" id="sheet"></div></section>
+  <section class="preview"><div class="pvhead"><span data-t="preview"></span><span>A4</span></div><div class="sheet" id="sheet"></div></section>
 </div>
-<button class="fab" id="fab">تنزيل PDF مجانًا</button>
-<div class="foot">سيرة مجانًا · أداة مجانية تعمل داخل متصفحك</div>
+<button class="fab" id="fab" data-t="fab"></button>
+<div class="foot" data-t="foot"></div>
 
 <script>
 const $ = id => document.getElementById(id);
-const KEY = 'cv-data-v1';
-const fields = ['name','title','phone','email','city','link','summary','skills','langs','dir','color','tpl'];
+const KEY = 'cv-data-v2';
+const fields = ['name','title','phone','email','city','link','summary','skills','langs','lang','color','tpl'];
 let state = { exp: [{}], edu: [{}] };
+
+const T = {
+ar:{dir:'rtl',pill:'مجاني 100% · بدون تسجيل · بدون علامة مائية',brand:'سيرة مجانًا',brand2:'FREE CV BUILDER',lead:'أنشئ سيرتك الذاتية الاحترافية في دقائق وحمّلها PDF. بياناتك تبقى على جهازك ولا تُرسل لأي مكان.',f1:'معاينة فورية',f2:'عربي · English · Français',f3:'جاهزة للطباعة A4',cta:'ابدأ الآن مجانًا',
+ tpl:'الشكل',tpls:['عصري','كلاسيكي'],color:'اللون',s1:'البيانات الشخصية',s2:'نبذة عنك',s3:'الخبرات',s4:'التعليم',s5:'المهارات',s6:'اللغات',
+ name:'الاسم الكامل',jobtitle:'المسمى الوظيفي',phone:'الهاتف',email:'البريد',city:'المدينة / الدولة',link:'رابط (لينكدإن أو موقع)',
+ ph_sum:'جملتان أو ثلاث عن خبرتك وما تبحث عنه',ph_sk:'Excel, خدمة العملاء, اللغة الإنجليزية',ph_lg:'العربية (الأم)، الإنجليزية (جيد جدًا)',sk_hint:'افصل بينها بفاصلة',
+ addexp:'+ إضافة خبرة',addedu:'+ إضافة مؤهل',pdf:'تنزيل PDF',clear:'مسح الكل',note:'عند الضغط على "تنزيل PDF" اختر "حفظ كـ PDF" كوجهة الطباعة. تُحفظ بياناتك في متصفحك فقط لتجدها عند عودتك.',
+ preview:'المعاينة المباشرة',fab:'تنزيل PDF مجانًا',foot:'سيرة مجانًا · أداة مجانية تعمل داخل متصفحك',
+ role:'المسمى',org:'جهة العمل',period:'الفترة (مثال: 2021 - 2024)',desc:'المهام والإنجازات',degree:'المؤهل',school:'الجامعة / المعهد',del:'حذف',confirm:'مسح كل البيانات؟',
+ sum:'نبذة',exp:'الخبرات',edu:'التعليم',sk:'المهارات',lg:'اللغات',yourname:'اسمك هنا',doc:'السيرة الذاتية',pagetitle:'سيرة مجانًا - أنشئ سيرتك الذاتية مجانًا بدون تسجيل | Free CV'},
+en:{dir:'ltr',pill:'100% free · No sign-up · No watermark',brand:'Free CV Maker',brand2:'ONE-PAGE RESUME BUILDER',lead:'Build a professional one-page resume in minutes and download it as PDF. Your data stays on your device and is never uploaded.',f1:'Live preview',f2:'العربية · English · Français',f3:'A4 print-ready',cta:'Start free now',
+ tpl:'Style',tpls:['Modern','Classic'],color:'Color',s1:'Personal details',s2:'Summary',s3:'Experience',s4:'Education',s5:'Skills',s6:'Languages',
+ name:'Full name',jobtitle:'Job title',phone:'Phone',email:'Email',city:'City / Country',link:'Link (LinkedIn or website)',
+ ph_sum:'Two or three sentences about your experience and goals',ph_sk:'Excel, Customer service, Project management',ph_lg:'Arabic (native), English (fluent)',sk_hint:'Separate with commas',
+ addexp:'+ Add experience',addedu:'+ Add education',pdf:'Download PDF',clear:'Clear all',note:'Click "Download PDF" and choose "Save as PDF" as the printer. Your data is saved in your browser only, so it is here when you come back.',
+ preview:'Live preview',fab:'Download PDF free',foot:'Free CV Maker · A free tool that runs in your browser',
+ role:'Job title',org:'Company',period:'Period (e.g. 2021 - 2024)',desc:'Duties & achievements',degree:'Degree',school:'University / School',del:'Delete',confirm:'Clear all data?',
+ sum:'Summary',exp:'Experience',edu:'Education',sk:'Skills',lg:'Languages',yourname:'Your Name',doc:'Resume',pagetitle:'Free CV Maker - Build your resume free, no sign-up'},
+fr:{dir:'ltr',pill:'100 % gratuit · Sans inscription · Sans filigrane',brand:'CV Gratuit',brand2:'CRÉATEUR DE CV EN UNE PAGE',lead:'Créez un CV professionnel d’une page en quelques minutes et téléchargez-le en PDF. Vos données restent sur votre appareil.',f1:'Aperçu en direct',f2:'العربية · English · Français',f3:'Prêt à imprimer A4',cta:'Commencer gratuitement',
+ tpl:'Style',tpls:['Moderne','Classique'],color:'Couleur',s1:'Informations personnelles',s2:'Profil',s3:'Expérience',s4:'Formation',s5:'Compétences',s6:'Langues',
+ name:'Nom complet',jobtitle:'Poste',phone:'Téléphone',email:'E-mail',city:'Ville / Pays',link:'Lien (LinkedIn ou site)',
+ ph_sum:'Deux ou trois phrases sur votre expérience et vos objectifs',ph_sk:'Excel, Service client, Gestion de projet',ph_lg:'Arabe (langue maternelle), Anglais (courant)',sk_hint:'Séparez par des virgules',
+ addexp:'+ Ajouter une expérience',addedu:'+ Ajouter une formation',pdf:'Télécharger en PDF',clear:'Tout effacer',note:'Cliquez sur « Télécharger en PDF » puis choisissez « Enregistrer au format PDF ». Vos données sont enregistrées uniquement dans votre navigateur.',
+ preview:'Aperçu en direct',fab:'Télécharger le PDF gratuitement',foot:'CV Gratuit · Un outil gratuit qui fonctionne dans votre navigateur',
+ role:'Poste',org:'Entreprise',period:'Période (ex. 2021 - 2024)',desc:'Missions et réalisations',degree:'Diplôme',school:'Université / École',del:'Supprimer',confirm:'Effacer toutes les données ?',
+ sum:'Profil',exp:'Expérience',edu:'Formation',sk:'Compétences',lg:'Langues',yourname:'Votre nom',doc:'CV',pagetitle:'CV Gratuit - Créez votre CV gratuitement, sans inscription'}
+};
+const t = k => T[$('lang').value][k];
+function applyLang(){
+  const L = T[$('lang').value];
+  document.documentElement.lang = $('lang').value; document.documentElement.dir = L.dir;
+  document.querySelectorAll('[data-t]').forEach(el => el.textContent = L[el.dataset.t]);
+  document.querySelectorAll('[data-ph]').forEach(el => el.placeholder = L[el.dataset.ph]);
+  const cur = $('tpl').value;
+  $('tplsel').innerHTML = ['modern','classic'].map((v,i)=>`<option value="${v}">${L.tpls[i]}</option>`).join(''); $('tplsel').value = cur;
+  document.querySelectorAll('#langsw button').forEach(b => b.classList.toggle('on', b.dataset.l===$('lang').value));
+  document.title = L.pagetitle;
+}
 const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 function load(){
@@ -160,27 +200,27 @@ function save(){
 }
 
 const schema = {
-  exp: [['role','المسمى'],['org','جهة العمل'],['period','الفترة (مثال: 2021 - 2024)'],['desc','المهام والإنجازات','ta']],
-  edu: [['degree','المؤهل'],['org','الجامعة / المعهد'],['period','الفترة']]
+  exp: [['role','role'],['org','org'],['period','period'],['desc','desc','ta']],
+  edu: [['degree','degree'],['org','school'],['period','period']]
 };
 function renderForm(){
   for(const k of ['exp','edu']){
     $(k).innerHTML = state[k].map((it,i) => `<div class="item">
-      <button class="rm" data-rm="${k}:${i}" title="حذف">×</button>
-      ${schema[k].map(([f,l,t]) => `<label>${l}</label>` + (t ? `<textarea data-k="${k}" data-i="${i}" data-f="${f}">${esc(it[f])}</textarea>`
+      <button class="rm" data-rm="${k}:${i}" title="${t('del')}">×</button>
+      ${schema[k].map(([f,l,ta]) => `<label>${t(l)}</label>` + (ta ? `<textarea data-k="${k}" data-i="${i}" data-f="${f}">${esc(it[f])}</textarea>`
         : `<input data-k="${k}" data-i="${i}" data-f="${f}" value="${esc(it[f])}">`)).join('')}</div>`).join('');
   }
 }
 function renderSheet(){
   const v = f => $(f).value.trim();
   const sh = $('sheet');
-  sh.dir = v('dir'); sh.className = 'sheet tpl-' + v('tpl');
+  sh.dir = T[v('lang')].dir; sh.className = 'sheet tpl-' + v('tpl');
   sh.style.setProperty('--acc', v('color'));
-  const L = sh.dir==='rtl' ? {sum:'نبذة',exp:'الخبرات',edu:'التعليم',sk:'المهارات',lg:'اللغات'} : {sum:'Summary',exp:'Experience',edu:'Education',sk:'Skills',lg:'Languages'};
+  const L = T[v('lang')];
   const contact = [v('phone'),v('email'),v('city'),v('link')].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('');
   const block = (key, arr, fn) => { const h = arr.filter(it => Object.values(it).some(Boolean)).map(fn).join(''); return h ? `<h3>${L[key]}</h3>${h}` : ''; };
   sh.innerHTML = `
-    <div class="hd"><h2>${esc(v('name')) || (sh.dir==='rtl'?'اسمك هنا':'Your Name')}</h2>
+    <div class="hd"><h2>${esc(v('name')) || L.yourname}</h2>
     <div class="title">${esc(v('title'))}</div>
     <div class="contact">${contact}</div></div><div class="bd">
     ${v('summary') ? `<h3>${L.sum}</h3><p>${esc(v('summary'))}</p>` : ''}
@@ -188,7 +228,7 @@ function renderSheet(){
     ${block('edu', state.edu, e => `<div class="e"><b>${esc(e.degree)}</b>${e.org?' — '+esc(e.org):''}<div class="d">${esc(e.period)}</div></div>`)}
     ${v('skills') ? `<h3>${L.sk}</h3><div class="skills">${v('skills').split(/[,،\n]/).map(s=>s.trim()).filter(Boolean).map(s=>`<span>${esc(s)}</span>`).join('')}</div>` : ''}
     ${v('langs') ? `<h3>${L.lg}</h3><p>${esc(v('langs'))}</p>` : ''}</div>`;
-  document.title = v('name') ? 'السيرة الذاتية - ' + v('name') : 'سيرة مجانًا';
+  document.title = v('name') ? L.doc + ' - ' + v('name') : L.pagetitle;
 }
 function refresh(){ renderSheet(); save(); }
 
@@ -205,10 +245,12 @@ document.addEventListener('click', e => {
 $('print').onclick = $('fab').onclick = () => window.print();
 $('sw').innerHTML = [...$('color').options].map(o=>`<button type="button" style="background:${o.value}" data-c="${o.value}"></button>`).join('');
 function paintSw(){ document.querySelectorAll('#sw button').forEach(b=>b.classList.toggle('on', b.dataset.c===$('color').value)); document.documentElement.style.setProperty('--ui',$('color').value); }
+$('langsw').onclick = e => { if(e.target.dataset.l){ $('lang').value = e.target.dataset.l; applyLang(); renderForm(); refresh(); } };
+$('tplsel').onchange = () => { $('tpl').value = $('tplsel').value; refresh(); };
 $('sw').onclick = e => { if(e.target.dataset.c){ $('color').value = e.target.dataset.c; paintSw(); refresh(); } };
-$('clear').onclick = () => { if(confirm('مسح كل البيانات؟')){ try{localStorage.removeItem(KEY)}catch(e){} location.reload(); } };
+$('clear').onclick = () => { if(confirm(t('confirm'))){ try{localStorage.removeItem(KEY)}catch(e){} location.reload(); } };
 
-load(); if(![...$('color').options].some(o=>o.value===$('color').value)) $('color').selectedIndex=0; renderForm(); renderSheet(); paintSw();
+load(); if(!T[$('lang').value]) $('lang').value='ar'; if(!['modern','classic'].includes($('tpl').value)) $('tpl').value='modern'; applyLang(); if(![...$('color').options].some(o=>o.value===$('color').value)) $('color').selectedIndex=0; renderForm(); renderSheet(); paintSw();
 </script>
 </body>
 </html>
