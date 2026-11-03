@@ -22,7 +22,10 @@ Moroccan phone normalization · filters/search · wa.me WhatsApp with editable D
 - **Smart add** (`/orders/quick`): paste an order as received (WhatsApp/Instagram, Arabic/French/one-line or labelled, several at once) → name, phone, city (AMEEX spelling), address, product, price are detected; review and save.
 - **Confirmation mode** (`/confirm`): one order at a time. *To send* lane: big WhatsApp button, then the order moves on. *Awaiting reply* lane: ✅ Confirmed / ❌ Cancelled / 📵 No answer / ⏰ in 2h / tomorrow. Orders with earlier refusals show a warning.
 
-## WhatsApp inbox (official Cloud API)
+## WhatsApp without any registration (default)
+The seller uses their own WhatsApp (phone or WhatsApp Web) — nothing to connect. On desktop **every send reuses one WhatsApp Web window** (put it side by side with Akked: `Win+←` / `Win+→`), on phones it uses wa.me. In the *awaiting reply* lane the agent can paste the customer's reply and get a one-tap confirm/cancel suggestion, or use keyboard shortcuts (C / X / N). No Meta account, company, or token needed.
+
+## WhatsApp inbox (official Cloud API, optional / advanced)
 Sellers connect their own number (Settings → WhatsApp: **Phone number ID**, **Access token**, approved **template name/language**; token stored encrypted).
 - **Send official** in confirmation mode sends the approved template (`{{1}}` name, `{{2}}` product, `{{3}}` price, `{{4}}` city) and moves the order on.
 - **Inbox** (`/inbox`): every customer reply appears live; reply in free text within 24 h of their last message (WhatsApp rule), otherwise send the template.

@@ -6,6 +6,7 @@ import { DEFAULT_TEMPLATES, renderTemplate, waLink } from '@/lib/templates';
 import { quickStatus, sendConfirmTemplate } from '../actions';
 import { waCreds } from '@/lib/inbox';
 import WaButton from './wa-button';
+import ReplyHelper from './reply-helper';
 
 export default async function Confirm({ searchParams }: { searchParams: Promise<{ lane?: string; skip?: string; lang?: string; err?: string }> }) {
   const me = await requireSession(); const { t } = await getT(); const sp = await searchParams;
@@ -50,12 +51,14 @@ export default async function Confirm({ searchParams }: { searchParams: Promise<
           {official && lane === 'reply' && <Link className="btn big" href={`/inbox/${o.phone.replace('+', '')}`} style={{ marginBottom: 8 }}>💬 {t.openInbox}</Link>}
           <WaButton id={o.id} url={waLink(o.phone, msg)} label={lane === 'send' ? t.sendWa : t.openChat} markAsSent={o.status === 'new'} secondary={lane === 'reply' || official} />
         </div>
+        {lane === 'reply' && <ReplyHelper confirmAction={quickStatus.bind(null, o.id, 'confirmed', '')} cancelAction={quickStatus.bind(null, o.id, 'cancelled', '')}
+          labels={{ pasteReply: t.pasteReply, suggestConfirm: t.suggestConfirm, suggestCancel: t.suggestCancel, shortcuts: t.shortcuts }} />}
         {lane === 'reply' && (
           <div className="card">
             <div className="grid2">
-              <form action={quickStatus.bind(null, o.id, 'confirmed', '')}><button className="big ok">{t.btnConfirm}</button></form>
-              <form action={quickStatus.bind(null, o.id, 'cancelled', '')}><button className="big danger">{t.btnCancel}</button></form>
-              <form action={quickStatus.bind(null, o.id, 'no_answer', '')}><button className="big sec">{t.btnNoAnswer}</button></form>
+              <form action={quickStatus.bind(null, o.id, 'confirmed', '')}><button className="big ok" data-act="confirmed">{t.btnConfirm}</button></form>
+              <form action={quickStatus.bind(null, o.id, 'cancelled', '')}><button className="big danger" data-act="cancelled">{t.btnCancel}</button></form>
+              <form action={quickStatus.bind(null, o.id, 'no_answer', '')}><button className="big sec" data-act="no_answer">{t.btnNoAnswer}</button></form>
               <form action={quickStatus.bind(null, o.id, 'callback', '2')}><button className="big sec">{t.btnLater2h}</button></form>
             </div>
             <form action={quickStatus.bind(null, o.id, 'callback', 'tomorrow')} style={{ marginTop: 8 }}>
