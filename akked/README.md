@@ -22,6 +22,14 @@ Moroccan phone normalization · filters/search · wa.me WhatsApp with editable D
 - **Smart add** (`/orders/quick`): paste an order as received (WhatsApp/Instagram, Arabic/French/one-line or labelled, several at once) → name, phone, city (AMEEX spelling), address, product, price are detected; review and save.
 - **Confirmation mode** (`/confirm`): one order at a time. *To send* lane: big WhatsApp button, then the order moves on. *Awaiting reply* lane: ✅ Confirmed / ❌ Cancelled / 📵 No answer / ⏰ in 2h / tomorrow. Orders with earlier refusals show a warning.
 
+## Shipping, follow-up and data sources
+- **Send all confirmed to AMEEX** (orders list): one click sends every confirmed order not yet sent (max 50): orders without an address or with an unknown city are skipped and listed with the reason.
+- **AMEEX tracking:** shipped orders are checked every 3 h (and on demand) via `Parcel Info`; "delivered"/"returned" are applied automatically and the raw AMEEX status is shown. AMEEX's public docs do not list status names or the response body, so the mapping is keyword-based and conservative (unknown → no change). **Verify with a real parcel** and adjust `mapAmeexStatus` / `extractStatusText` in `src/lib/ameexFlow.ts`.
+- **Confirmation mode has 3 lanes:** *To send* (new) · *Awaiting reply* (message sent) · *To call today* (no answer + callbacks that are due, with a big Call button). Cancelling asks for a reason (wrong number / changed mind / too expensive / fake / other) which feeds the dashboard.
+- **Dashboard:** delivered / returned / return rate and cancellation reasons.
+- **Google Sheets (no OAuth):** share the sheet ("anyone with the link can view"), paste the link in Settings; new rows are imported every 10 min or on demand. Only `docs.google.com` links are accepted; re-sorting the sheet does not create duplicates (identical rows are told apart by occurrence).
+- Background jobs (backup, tracking, Sheets) start with the server; set `AKKED_NO_JOBS=1` to disable them.
+
 ## Subscription, backups and legal
 - **Billing** (`/billing`, owner): current plan/days left/usage, plan cards, the admin's payment instructions (bank / CashPlus / Wafacash), and an "I paid" form (reference + optional proof image/PDF ≤ 2 MB, verified by file signature). Banner: 3 days before the end and when expired.
 - **Admin** (`/admin`): pending payments with proof → **Activate** (adds 30 days from today, or from the current end if still active) or **Reject**; platform settings (payment instructions, support WhatsApp, operator name/contact/jurisdiction used by the legal pages); nav badge shows pending count.

@@ -4,7 +4,7 @@ import { getT, STATUSES } from '@/lib/i18n';
 import { getWorkspace, listOrders, unmatchedCities, monthlyUsage, teamMembers, PLANS, type PlanKey } from '@/lib/orders';
 import { isActive } from '@/lib/plans';
 import { db } from '@/lib/db';
-import { listStatus } from '../actions';
+import { bulkSendAmeex, listStatus, trackAmeexNow } from '../actions';
 import Onboarding from '../onboarding';
 
 export default async function Orders({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
@@ -16,9 +16,14 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
   const agents = teamMembers(me.workspaceId);
   const cities = db().prepare(`SELECT DISTINCT city FROM orders WHERE workspace_id = ? AND city <> '' ORDER BY city`).all(me.workspaceId) as any[];
   const badCities = unmatchedCities(me.workspaceId);
+  const unsent = (db().prepare(`SELECT COUNT(*) c FROM orders WHERE workspace_id = ? AND status = 'confirmed' AND ameex_parcel_code IS NULL`).get(me.workspaceId) as any).c as number;
+  const shipped = (db().prepare(`SELECT COUNT(*) c FROM orders WHERE workspace_id = ? AND status = 'shipped' AND ameex_parcel_code IS NOT NULL AND ameex_parcel_code <> 'SENT'`).get(me.workspaceId) as any).c as number;
+  const [bs, bf] = (sp.bulk ?? '').split('-'); const [tc, td, tr] = (sp.tracked ?? '').split('-');
   const used = monthlyUsage(me.workspaceId); const lim = PLANS[ws.plan as PlanKey].orders;
   return (<>
     <Onboarding wsId={me.workspaceId} t={t as any} />
+    {sp.bulk && <div className={bf === '0' ? 'ok' : 'err'}>{t.bulkSent}: {bs} · {t.bulkFailed}: {bf}{sp.bf ? ' — ' + sp.bf.split(',').map((x) => { const [n, e] = x.split(':'); return `${n} (${(t as any)['ameex_' + e] ?? e})`; }).join(' · ') : ''}</div>}
+    {sp.tracked && <div className="ok">{t.trackedN}: {tc} · {t.deliveredLbl}: {td} · {t.returnedLbl}: {tr}</div>}
     {sp.added && <div className="ok">{t.added}: {sp.added}{sp.skipped && sp.skipped !== '0' ? ` · ${t.skipped}: ${sp.skipped}` : ''}</div>}
     {!isActive(ws) && <div className="err">{t.expired}</div>}
     {badCities.length > 0 && <div className="err">⚠ {t.cityWarn}: {badCities.map((b) => <Link key={b.id} href={`/orders/${b.id}`}>{b.order_number} ({b.city || '—'}) </Link>)}</div>}
@@ -30,6 +35,10 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
       {me.role === 'owner' && <><a className="btn sec" href="/export?format=ameex">{t.export} AMEEX (xlsx)</a>
       <a className="btn sec" href="/export?format=generic">{t.export} CSV</a></>}
     </div>
+    {(unsent > 0 || (shipped > 0 && me.role === 'owner')) && <div className="inline" style={{ marginBottom: 12 }}>
+      {unsent > 0 && <form action={bulkSendAmeex}><button>🚚 {t.bulkSend} ({unsent})</button></form>}
+      {shipped > 0 && me.role === 'owner' && <form action={trackAmeexNow}><button className="sec">🔄 {t.trackNow} ({shipped})</button></form>}
+    </div>}
     <p className="muted">{t.plan}: {PLANS[ws.plan as PlanKey].name} · {t.usage}: {used}/{lim === Infinity ? '∞' : lim}</p>
     <details className="card" open={Object.keys(keep).length > 0}><summary><strong>🔎 {t.search} / {t.filter}</strong></summary>
     <form className="inline" method="get" style={{ marginTop: 8 }}>
@@ -50,6 +59,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
             <div className="tags">
               <span className={`badge ${o.status}`}>{(t as any)['s_' + o.status]}</span>
               {o.refusals > 0 && <span className="badge bad">⚠ {t.refusedBefore}{o.refusals > 1 ? ` ×${o.refusals}` : ''}</span>}
+              {o.ameex_status && <span className="badge">🚚 {o.ameex_status}</span>}
             </div>
             <div className="muted"><bdi dir="ltr">{o.phone}</bdi> · {o.city}</div>
             <div className="muted"><bdi dir="auto">{o.quantity}× {o.products} {o.size} {o.color}</bdi></div>

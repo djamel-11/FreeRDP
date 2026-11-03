@@ -67,6 +67,13 @@ export function db(): Db {
     status TEXT NOT NULL DEFAULT 'pending', created_at TEXT DEFAULT CURRENT_TIMESTAMP, decided_at TEXT, decided_by INTEGER
   );
   CREATE INDEX IF NOT EXISTS idx_payments_ws ON payments(workspace_id, id);`);
+  addCol('orders', 'cancel_reason', 'TEXT');
+  addCol('orders', 'ameex_status', 'TEXT');
+  addCol('orders', 'ameex_checked_at', 'TEXT');
+  addCol('workspaces', 'sheet_url', 'TEXT');
+  addCol('workspaces', 'sheet_last_sync', 'TEXT');
+  addCol('workspaces', 'sheet_last_result', 'TEXT');
+  d.exec(`CREATE TABLE IF NOT EXISTS sheet_seen (workspace_id INTEGER NOT NULL, h TEXT NOT NULL, PRIMARY KEY (workspace_id, h))`);
   addCol('users', 'recovery_hash', 'TEXT');
   addCol('orders', 'claimed_by', 'INTEGER');
   addCol('orders', 'claimed_at', 'TEXT');

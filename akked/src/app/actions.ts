@@ -14,6 +14,9 @@ import { STATUSES } from '@/lib/i18n';
 import { canonicalCity } from '@/lib/cities';
 import { decrypt, encrypt } from '@/lib/secrets';
 import { sendParcel } from '@/lib/ameex';
+import { CANCEL_REASONS } from '@/lib/reasons';
+import { bulkSendToAmeex, sendOrderToAmeex, trackWorkspace } from '@/lib/ameexFlow';
+import { parseSheetUrl, syncSheet } from '@/lib/sheets';
 import { sendText, sendTemplate } from '@/lib/whatsapp';
 import { checkProof, createPayment, decidePayment } from '@/lib/billing';
 import { setSetting, SETTING_KEYS } from '@/lib/settings';
@@ -196,23 +199,38 @@ export async function saveAmeexCreds(f: FormData) {
 export async function sendToAmeex(f: FormData) {
   const me = await requireSession();
   const id = Number(s(f, 'id'));
-  const back = (q: string) => redirect(`/orders/${id}?${q}`);
-  const o = getOrder(me.workspaceId, id);
-  if (!o || o.status !== 'confirmed') back('ameex=notconfirmed');
-  if (o.ameex_parcel_code) back('ameex=already');
-  const ws = db().prepare('SELECT ameex_api_id, ameex_api_key_enc FROM workspaces WHERE id=?').get(me.workspaceId) as any;
-  if (!ws?.ameex_api_id || !ws?.ameex_api_key_enc) back('ameex=nocreds');
-  const cityId = ameexCityId(o.city || '');
-  if (cityId == null) back('ameex=nocity');
-  const r = await sendParcel({ apiId: ws.ameex_api_id, apiKey: decrypt(ws.ameex_api_key_enc) },
-    { ...o, address: o.address || '', city: o.city || '', notes: o.notes || '', products: o.products || '', size: o.size || '', color: o.color || '' }, cityId!);
-  if (!r.ok) {
-    db().prepare('UPDATE orders SET ameex_error=? WHERE id=?').run(`${r.error}: ${r.raw ?? ''}`.slice(0, 300), id);
-    back('ameex=fail');
-  }
-  db().prepare('UPDATE orders SET ameex_parcel_code=?, ameex_error=? WHERE id=?').run(r.parcelCode ?? 'SENT', r.parcelCode ? null : `no_code: ${r.raw ?? ''}`.slice(0, 300), id);
-  changeStatus(me.workspaceId, me.userId, id, 'shipped');
-  back('ameex=ok');
+  const r = await sendOrderToAmeex(me.workspaceId, me.userId, id);
+  redirect(`/orders/${id}?ameex=${r.ok ? 'ok' : r.error === 'fail' ? 'fail' : r.error}`);
+}
+
+/** Send every confirmed order that has not been sent yet (max 50 per click). */
+export async function bulkSendAmeex() {
+  const me = await requireSession();
+  const r = await bulkSendToAmeex(me.workspaceId, me.userId);
+  const fails = r.failed.slice(0, 8).map((x) => `${x.order_number}:${x.error}`).join(',');
+  redirect(`/orders?bulk=${r.sent}-${r.failed.length}${fails ? '&bf=' + encodeURIComponent(fails) : ''}`);
+}
+
+export async function trackAmeexNow() {
+  const me = await requireOwner();
+  const r = await trackWorkspace(me.workspaceId);
+  redirect(`/orders?tracked=${r.checked}-${r.delivered}-${r.returned}`);
+}
+
+export async function saveSheet(f: FormData) {
+  const me = await requireOwner();
+  const url = s(f, 'url');
+  if (!url) { db().prepare('UPDATE workspaces SET sheet_url = NULL WHERE id = ?').run(me.workspaceId); redirect('/settings?sheet=off'); }
+  if (!parseSheetUrl(url)) redirect('/settings?sheet=badurl');
+  db().prepare('UPDATE workspaces SET sheet_url = ? WHERE id = ?').run(url.slice(0, 500), me.workspaceId);
+  redirect('/settings?sheet=saved');
+}
+
+export async function syncSheetNow() {
+  const me = await requireOwner();
+  const r = await syncSheet(me.workspaceId);
+  revalidatePath('/orders');
+  redirect(`/settings?sheet=${r.ok ? 'synced-' + r.added : 'err-' + r.error}`);
 }
 
 /** Admin: paste "id,name" lines (AMEEX city ids). Names are matched to canonical cities. */
@@ -239,8 +257,10 @@ export async function markSent(id: number) {
   revalidatePath('/confirm');
 }
 
-/** One-tap result from the confirmation queue (bound per button: id, status, optional hours/"tomorrow"). */
-export async function quickStatus(id: number, status: string, hours: string, _fd?: FormData) {
+const laneOf = (l: string) => (['send', 'reply', 'call'].includes(l) ? l : 'reply');
+
+/** One-tap result from the confirmation queue (bound per button: id, status, optional hours/"tomorrow", lane to return to). */
+export async function quickStatus(id: number, status: string, hours: string, lane: string, _fd?: FormData) {
   const me = await requireSession();
   if (!['confirmed', 'cancelled', 'no_answer', 'callback'].includes(status)) return;
   let cb: string | null = null;
@@ -251,7 +271,16 @@ export async function quickStatus(id: number, status: string, hours: string, _fd
   }
   changeStatus(me.workspaceId, me.userId, Number(id), status, cb);
   revalidatePath('/confirm');
-  redirect('/confirm?lane=reply');
+  redirect('/confirm?lane=' + laneOf(lane));
+}
+
+/** Cancel with a reason (one extra tap in the queue); reasons feed the dashboard. */
+export async function quickCancel(id: number, reason: string, lane: string, _fd?: FormData) {
+  const me = await requireSession();
+  const r = (CANCEL_REASONS as readonly string[]).includes(reason) ? reason : 'unspecified';
+  if (changeStatus(me.workspaceId, me.userId, Number(id), 'cancelled', null, 'reason: ' + r)) db().prepare('UPDATE orders SET cancel_reason = ? WHERE id = ? AND workspace_id = ?').run(r, Number(id), me.workspaceId);
+  revalidatePath('/confirm');
+  redirect('/confirm?lane=' + laneOf(lane));
 }
 
 /** Save the reviewed drafts from the smart-add screen. */

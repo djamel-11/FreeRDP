@@ -4,8 +4,8 @@ import { getWorkspace } from '@/lib/orders';
 import { DEFAULT_TEMPLATES } from '@/lib/templates';
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { saveAmeexCreds, saveTemplates, saveWhatsapp } from '../actions';
-export default async function Settings({ searchParams }: { searchParams: Promise<{ ameex?: string; wa?: string }> }) {
+import { saveAmeexCreds, saveSheet, saveTemplates, saveWhatsapp, syncSheetNow } from '../actions';
+export default async function Settings({ searchParams }: { searchParams: Promise<{ ameex?: string; wa?: string; sheet?: string }> }) {
   const sp = await searchParams;
   const h = await headers(); const origin = `${h.get('x-forwarded-proto') ?? 'http'}://${h.get('host')}`;
   const me = await requireOwner(); const { t } = await getT(); const ws = getWorkspace(me.workspaceId) as any;
@@ -14,6 +14,12 @@ export default async function Settings({ searchParams }: { searchParams: Promise
     {sp.ameex && <div className="ok">{sp.ameex === 'off' ? t.ameexOff : t.ameexSaved}</div>}
     {me.role === 'owner' ? <form action={saveAmeexCreds}><label>{t.ameexId}</label><input name="api_id" defaultValue={ws.ameex_api_id ?? ''} dir="ltr" autoComplete="off" />
       <label>{t.ameexKey}</label><input name="api_key" type="password" placeholder={ws.ameex_api_key_enc ? '••••••••' : ''} dir="ltr" autoComplete="off" /><p><button>{t.save}</button></p></form> : <p className="muted">—</p>}
+  </div>
+  <div className="card"><h1>{t.sheetTitle}</h1>
+    {sp.sheet && <div className={sp.sheet.startsWith('err') || sp.sheet === 'badurl' ? 'err' : 'ok'}>{sp.sheet === 'badurl' ? t.sheetBad : sp.sheet === 'off' ? t.sheetOff : sp.sheet === 'saved' ? t.sheetSaved : sp.sheet.startsWith('synced-') ? `${t.sheetSynced}: ${sp.sheet.slice(7)}` : (t as any)['sheetErr_' + sp.sheet.slice(4)] ?? '✖'}</div>}
+    <p className="muted">{t.sheetHint}</p>
+    <form action={saveSheet}><label>{t.sheetUrlLbl}</label><input name="url" dir="ltr" defaultValue={ws.sheet_url ?? ''} placeholder="https://docs.google.com/spreadsheets/d/…" autoComplete="off" /><p><button>{t.save}</button></p></form>
+    {ws.sheet_url && <form action={syncSheetNow}><button className="sec">🔄 {t.syncNow}</button> <span className="muted">{t.lastSync}: {ws.sheet_last_sync ? String(ws.sheet_last_sync).slice(0, 16).replace('T', ' ') : '—'} · {ws.sheet_last_result ?? ''}</span></form>}
   </div>
   <details className="card" open={!!sp.wa}><summary><strong>{t.advanced}</strong></summary><h1>{t.waSettings}</h1>
     {sp.wa && <div className={sp.wa === 'saved' || sp.wa === 'off' ? 'ok' : 'err'}>{sp.wa === 'saved' ? t.waSaved : sp.wa === 'taken' ? t.waTaken : sp.wa === 'off' ? '—' : '✖'}</div>}

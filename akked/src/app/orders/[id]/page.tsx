@@ -37,6 +37,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
     <div className="card"><h2>AMEEX</h2>
       {o.ameex_parcel_code ? <p>{t.ameexParcel}: <strong dir="ltr">{o.ameex_parcel_code}</strong></p> : (
         <form action={sendToAmeex}><input type="hidden" name="id" value={o.id} /><button disabled={o.status !== 'confirmed'}>🚚 {t.ameexSend}</button></form>)}
+      {o.ameex_status && <p>{t.ameexStatusLbl}: <b>{o.ameex_status}</b></p>}
       {o.ameex_error && <p className="muted" dir="ltr">{o.ameex_error}</p>}
     </div>
     <div className="card"><h2>{t.updateStatus}</h2>

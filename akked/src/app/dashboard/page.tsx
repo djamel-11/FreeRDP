@@ -9,6 +9,10 @@ export default async function Dashboard() {
     <div className="row"><div className="card"><div className="muted">{t.orders}</div><div className="kpi">{s.total}</div></div>
       <div className="card"><div className="muted">{t.confirmRate}</div><div className="kpi">{pct(s.confirmRate)}</div></div>
       <div className="card"><div className="muted">{t.refusalRate}</div><div className="kpi">{pct(s.refusalRate)}</div></div></div>
+    <div className="row"><div className="card"><div className="muted">{t.deliveredLbl}</div><div className="kpi">{s.delivered}</div></div>
+      <div className="card"><div className="muted">{t.returnedLbl}</div><div className="kpi">{s.returned}</div></div>
+      <div className="card"><div className="muted">{t.returnRateLbl}</div><div className="kpi">{pct(s.returnRate)}</div></div></div>
+    {s.reasons.length > 0 && <div className="card"><h2>{t.cancelReasonsTitle}</h2>{s.reasons.map((r: any) => <div key={r.reason} className="inline" style={{ flexWrap: 'nowrap', alignItems: 'center' }}><span style={{ flex: '0 0 110px' }}>{(t as any)['r_' + r.reason] ?? r.reason}</span><div className="bar" style={{ width: `${(r.c / Math.max(1, s.reasons[0].c)) * 100}%`, flex: 'none' }} /><span>{r.c}</span></div>)}</div>}
     <div className="card"><h2>{t.ordersPerDay}</h2>{s.perDay.length === 0 && <p className="muted">{t.none}</p>}
       {s.perDay.map((d) => <div key={d.day} className="inline" style={{ flexWrap: 'nowrap', alignItems: 'center' }}><span dir="ltr" className="muted" style={{ flex: '0 0 90px' }}>{d.day}</span><div className="bar" style={{ width: `${(d.c / max) * 100}%`, flex: 'none' }} /><span>{d.c}</span></div>)}</div>
     <div className="card"><h2>{t.topCities}</h2>

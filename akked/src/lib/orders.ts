@@ -74,7 +74,10 @@ export function stats(wsId: number) {
   const cities = d.prepare(`SELECT city, COUNT(*) c FROM orders WHERE workspace_id = ? AND city <> '' GROUP BY city ORDER BY c DESC LIMIT 5`).all(wsId) as any[];
   const agents = d.prepare(`SELECT u.full_name name, COUNT(*) handled, SUM(o.status IN ('confirmed','shipped','delivered')) confirmed
     FROM orders o JOIN users u ON u.id = o.agent_id WHERE o.workspace_id = ? GROUP BY u.id`).all(wsId) as any[];
-  return { total, confirmRate: total ? confirmed / total : 0, refusalRate: total ? refused / total : 0, perDay, cities, agents };
+  const cnt = (s: string) => (d.prepare(`SELECT COUNT(*) c FROM orders WHERE workspace_id = ? AND status = '${s}'`).get(wsId) as any).c as number;
+  const delivered = cnt('delivered'), returned = cnt('returned');
+  const reasons = d.prepare(`SELECT COALESCE(cancel_reason, 'unspecified') reason, COUNT(*) c FROM orders WHERE workspace_id = ? AND status = 'cancelled' GROUP BY reason ORDER BY c DESC`).all(wsId) as any[];
+  return { total, confirmRate: total ? confirmed / total : 0, refusalRate: total ? refused / total : 0, perDay, cities, agents, delivered, returned, returnRate: delivered + returned ? returned / (delivered + returned) : 0, reasons };
 }
 
 export function exportableOrders(wsId: number, markExported: boolean): ExportOrder[] {
@@ -111,17 +114,18 @@ const localNow = () => { const d = new Date(); const z = (n: number) => String(n
 
 /** Confirmation queue: "send" = new orders; "reply" = waiting for an answer (+ callbacks that are due).
  *  The order shown is claimed for `userId` for 10 minutes so two agents never work on the same one. */
-export function queue(wsId: number, lane: 'send' | 'reply', skip: number[] = [], userId: number | null = null) {
-  const where = lane === 'send'
-    ? `status = 'new'`
-    : `(status IN ('message_sent','no_answer') OR (status = 'callback' AND callback_at IS NOT NULL AND callback_at <= @now))`;
+export type Lane = 'send' | 'reply' | 'call';
+export function queue(wsId: number, lane: Lane, skip: number[] = [], userId: number | null = null) {
+  const where = lane === 'send' ? `status = 'new'`
+    : lane === 'reply' ? `status = 'message_sent'`
+    : `(status = 'no_answer' OR (status = 'callback' AND callback_at IS NOT NULL AND callback_at <= @now))`;
   const base = `FROM orders WHERE workspace_id = @ws AND ${where}`;
-  const p: Record<string, string | number> = lane === 'send' ? { ws: wsId } : { ws: wsId, now: localNow() }; // node:sqlite rejects unused named params
+  const p: Record<string, string | number> = lane === 'call' ? { ws: wsId, now: localNow() } : { ws: wsId }; // node:sqlite rejects unused named params
   const count = (db().prepare(`SELECT COUNT(*) c ${base}`).get(p) as any).c as number;
   const ids = skip.filter((n) => Number.isInteger(n));
   const notSkipped = ids.length ? ` AND id NOT IN (${ids.join(',')})` : '';
   const free = userId == null ? '' : ` AND (claimed_by IS NULL OR claimed_by = ${Number(userId)} OR claimed_at < datetime('now','-10 minutes'))`;
-  const order = lane === 'send' ? 'id ASC' : 'status_changed_at ASC, id ASC';
+  const order = lane === 'send' ? 'id ASC' : lane === 'reply' ? 'status_changed_at ASC, id ASC' : 'COALESCE(callback_at, status_changed_at) ASC, id ASC';
   const next = db().prepare(`SELECT *, (SELECT COUNT(*) FROM orders x WHERE x.workspace_id = orders.workspace_id AND x.phone = orders.phone AND x.id <> orders.id AND x.status IN ('cancelled','returned')) AS refusals ${base}${notSkipped}${free} ORDER BY ${order} LIMIT 1`).get(p) as any;
   if (next && userId != null) {
     db().prepare(`UPDATE orders SET claimed_by = NULL, claimed_at = NULL WHERE workspace_id = ? AND claimed_by = ? AND id <> ?`).run(wsId, userId, next.id);
@@ -129,7 +133,7 @@ export function queue(wsId: number, lane: 'send' | 'reply', skip: number[] = [],
   }
   return { count, next };
 }
-export const queueCounts = (wsId: number) => ({ send: queue(wsId, 'send').count, reply: queue(wsId, 'reply').count });
+export const queueCounts = (wsId: number) => ({ send: queue(wsId, 'send').count, reply: queue(wsId, 'reply').count, call: queue(wsId, 'call').count });
 
 export interface OrderEdit { customer_name: string; phone: string; city: string; address: string; products: string; size: string; color: string; quantity: number; price: number; notes: string }
 /** Edit an order (all roles). Normalises phone and city; records which fields changed in the order history. */
