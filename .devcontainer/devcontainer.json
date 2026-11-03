@@ -1,0 +1,9 @@
+{
+  "name": "Akked",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}/akked",
+  "postCreateCommand": "npm install",
+  "postAttachCommand": "npm run dev",
+  "forwardPorts": [3000],
+  "portsAttributes": { "3000": { "label": "Akked", "onAutoForward": "openBrowser" } }
+}
