@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سيرتي - سيرة ذاتية بصفحة واحدة بدون تسجيل</title>
+<style>
+:root{--acc:#2563eb;--bg:#f3f4f6;--card:#fff;--fg:#111827;--mut:#6b7280;--bd:#d1d5db}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Tahoma,"Segoe UI",system-ui,sans-serif}
+.app{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:20px;max-width:1200px;margin:0 auto;padding:16px}
+@media(max-width:900px){.app{grid-template-columns:1fr}}
+.panel{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 1px 3px #0001;align-self:start}
+h1{font-size:1.2rem;margin:0 0 4px}.sub{color:var(--mut);font-size:.85rem;margin:0 0 14px}
+.badge{display:inline-block;background:#dcfce7;color:#166534;font-size:.75rem;padding:2px 8px;border-radius:10px}
+label{display:block;font-size:.8rem;color:var(--mut);margin:10px 0 3px}
+input,textarea,select{width:100%;padding:8px;border:1px solid var(--bd);border-radius:8px;font:inherit;background:#fff;color:#111}
+textarea{min-height:70px;resize:vertical}
+fieldset{border:1px solid var(--bd);border-radius:10px;margin:14px 0 0;padding:6px 12px 12px}
+legend{font-weight:700;font-size:.9rem;padding:0 6px}
+.item{border:1px dashed var(--bd);border-radius:8px;padding:8px;margin-top:8px;position:relative}
+.item .rm{position:absolute;top:4px;inset-inline-end:4px;border:0;background:none;color:#dc2626;cursor:pointer;font-size:1.1rem}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button.add{margin-top:8px;border:1px dashed var(--acc);color:var(--acc);background:none;padding:6px 12px;border-radius:8px;cursor:pointer;font:inherit}
+.actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.actions button{flex:1;padding:10px;border:0;border-radius:8px;font:inherit;cursor:pointer}
+.pdf{background:var(--acc);color:#fff;font-weight:700}.clr{background:#e5e7eb}
+/* ورقة السيرة */
+.sheet{background:#fff;width:210mm;min-height:297mm;max-width:100%;margin:0 auto;padding:16mm 15mm;box-shadow:0 2px 10px #0002;color:#111;font-size:11pt;line-height:1.55}
+.sheet h2{margin:0;font-size:24pt;line-height:1.2}
+.sheet .title{color:var(--acc);font-size:13pt;margin:2px 0 6px}
+.sheet .contact{display:flex;flex-wrap:wrap;gap:4px 14px;color:#444;font-size:10pt;padding-bottom:8px;border-bottom:2px solid var(--acc)}
+.sheet h3{color:var(--acc);font-size:12pt;margin:14px 0 4px;border-bottom:1px solid #ddd;padding-bottom:2px}
+.sheet .e{margin-bottom:8px}.sheet .e b{font-size:11pt}.sheet .d{color:#555;font-size:9.5pt}
+.sheet p{margin:2px 0;white-space:pre-line}
+.skills{display:flex;flex-wrap:wrap;gap:5px}.skills span{background:#eef2ff;color:#1e3a8a;padding:1px 9px;border-radius:10px;font-size:10pt}
+.tpl-classic .skills span{background:none;border:1px solid #bbb;color:#222}
+@media print{
+  body{background:#fff}.app{display:block;padding:0;max-width:none}.panel{display:none}
+  .sheet{box-shadow:none;margin:0;width:auto;min-height:0;padding:0}
+  @page{size:A4;margin:14mm}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="panel" id="form">
+    <h1>سيرتي</h1>
+    <p class="sub">سيرة ذاتية بصفحة واحدة <span class="badge">بياناتك لا تغادر جهازك</span></p>
+
+    <div class="row">
+      <div><label>اللغة / الاتجاه</label>
+        <select id="dir"><option value="rtl">عربي (يمين لليسار)</option><option value="ltr">English (LTR)</option></select></div>
+      <div><label>اللون</label>
+        <select id="color"><option value="#2563eb">أزرق</option><option value="#059669">أخضر</option><option value="#7c3aed">بنفسجي</option><option value="#b91c1c">أحمر</option><option value="#111827">أسود</option></select></div>
+    </div>
+    <label>الشكل</label>
+    <select id="tpl"><option value="modern">عصري</option><option value="classic">كلاسيكي</option></select>
+
+    <fieldset><legend>البيانات الشخصية</legend>
+      <label>الاسم الكامل</label><input id="name">
+      <label>المسمى الوظيفي</label><input id="title">
+      <div class="row">
+        <div><label>الهاتف</label><input id="phone" dir="ltr"></div>
+        <div><label>البريد</label><input id="email" dir="ltr"></div>
+      </div>
+      <label>المدينة / الدولة</label><input id="city">
+      <label>رابط (لينكدإن أو موقع)</label><input id="link" dir="ltr">
+    </fieldset>
+
+    <fieldset><legend>نبذة</legend>
+      <textarea id="summary" placeholder="جملتان أو ثلاث عن خبرتك وما تبحث عنه"></textarea>
+    </fieldset>
+
+    <fieldset><legend>الخبرات</legend><div id="exp"></div>
+      <button class="add" data-add="exp">+ إضافة خبرة</button></fieldset>
+
+    <fieldset><legend>التعليم</legend><div id="edu"></div>
+      <button class="add" data-add="edu">+ إضافة مؤهل</button></fieldset>
+
+    <fieldset><legend>المهارات</legend>
+      <label>افصل بينها بفاصلة</label>
+      <textarea id="skills" placeholder="Excel, خدمة العملاء, اللغة الإنجليزية"></textarea>
+    </fieldset>
+
+    <fieldset><legend>اللغات</legend>
+      <textarea id="langs" placeholder="العربية (الأم)، الإنجليزية (جيد جدًا)"></textarea>
+    </fieldset>
+
+    <div class="actions">
+      <button class="pdf" id="print">تنزيل PDF</button>
+      <button class="clr" id="clear">مسح الكل</button>
+    </div>
+    <p class="sub" style="margin-top:10px">عند الضغط على "تنزيل PDF" اختر "حفظ كـ PDF" كوجهة الطباعة. تُحفظ بياناتك في متصفحك فقط لتجدها عند عودتك.</p>
+  </section>
+
+  <section><div class="sheet" id="sheet"></div></section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const KEY = 'cv-data-v1';
+const fields = ['name','title','phone','email','city','link','summary','skills','langs','dir','color','tpl'];
+let state = { exp: [{}], edu: [{}] };
+const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function load(){
+  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d){ state = d.state||state; fields.forEach(f => { if(d[f]!==undefined) $(f).value = d[f]; }); } }catch(e){}
+}
+function save(){
+  try{ const d = { state }; fields.forEach(f => d[f] = $(f).value); localStorage.setItem(KEY, JSON.stringify(d)); }catch(e){}
+}
+
+const schema = {
+  exp: [['role','المسمى'],['org','جهة العمل'],['period','الفترة (مثال: 2021 - 2024)'],['desc','المهام والإنجازات','ta']],
+  edu: [['degree','المؤهل'],['org','الجامعة / المعهد'],['period','الفترة']]
+};
+function renderForm(){
+  for(const k of ['exp','edu']){
+    $(k).innerHTML = state[k].map((it,i) => `<div class="item">
+      <button class="rm" data-rm="${k}:${i}" title="حذف">×</button>
+      ${schema[k].map(([f,l,t]) => `<label>${l}</label>` + (t ? `<textarea data-k="${k}" data-i="${i}" data-f="${f}">${esc(it[f])}</textarea>`
+        : `<input data-k="${k}" data-i="${i}" data-f="${f}" value="${esc(it[f])}">`)).join('')}</div>`).join('');
+  }
+}
+function renderSheet(){
+  const v = f => $(f).value.trim();
+  const sh = $('sheet');
+  sh.dir = v('dir'); sh.className = 'sheet tpl-' + v('tpl');
+  sh.style.setProperty('--acc', v('color'));
+  const L = sh.dir==='rtl' ? {sum:'نبذة',exp:'الخبرات',edu:'التعليم',sk:'المهارات',lg:'اللغات'} : {sum:'Summary',exp:'Experience',edu:'Education',sk:'Skills',lg:'Languages'};
+  const contact = [v('phone'),v('email'),v('city'),v('link')].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('');
+  const block = (key, arr, fn) => { const h = arr.filter(it => Object.values(it).some(Boolean)).map(fn).join(''); return h ? `<h3>${L[key]}</h3>${h}` : ''; };
+  sh.innerHTML = `
+    <h2>${esc(v('name')) || (sh.dir==='rtl'?'اسمك هنا':'Your Name')}</h2>
+    <div class="title">${esc(v('title'))}</div>
+    <div class="contact">${contact}</div>
+    ${v('summary') ? `<h3>${L.sum}</h3><p>${esc(v('summary'))}</p>` : ''}
+    ${block('exp', state.exp, e => `<div class="e"><b>${esc(e.role)}</b>${e.org?' — '+esc(e.org):''}<div class="d">${esc(e.period)}</div><p>${esc(e.desc)}</p></div>`)}
+    ${block('edu', state.edu, e => `<div class="e"><b>${esc(e.degree)}</b>${e.org?' — '+esc(e.org):''}<div class="d">${esc(e.period)}</div></div>`)}
+    ${v('skills') ? `<h3>${L.sk}</h3><div class="skills">${v('skills').split(/[,،\n]/).map(s=>s.trim()).filter(Boolean).map(s=>`<span>${esc(s)}</span>`).join('')}</div>` : ''}
+    ${v('langs') ? `<h3>${L.lg}</h3><p>${esc(v('langs'))}</p>` : ''}`;
+  document.title = v('name') ? 'السيرة الذاتية - ' + v('name') : 'سيرتي';
+}
+function refresh(){ renderSheet(); save(); }
+
+document.addEventListener('input', e => {
+  const t = e.target;
+  if(t.dataset.k){ state[t.dataset.k][t.dataset.i][t.dataset.f] = t.value; }
+  refresh();
+});
+document.addEventListener('click', e => {
+  const t = e.target;
+  if(t.dataset.add){ state[t.dataset.add].push({}); renderForm(); refresh(); }
+  if(t.dataset.rm){ const [k,i] = t.dataset.rm.split(':'); state[k].splice(+i,1); if(!state[k].length) state[k].push({}); renderForm(); refresh(); }
+});
+$('print').onclick = () => window.print();
+$('clear').onclick = () => { if(confirm('مسح كل البيانات؟')){ try{localStorage.removeItem(KEY)}catch(e){} location.reload(); } };
+
+load(); renderForm(); renderSheet();
+</script>
+</body>
+</html>
