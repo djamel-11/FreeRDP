@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>سيرة مجانًا - أنشئ سيرتك الذاتية مجانًا بدون تسجيل | Free CV</title>
-<meta name="description" content="أنشئ سيرة ذاتية احترافية مجانًا في دقائق وحمّلها PDF. بدون تسجيل وبدون علامة مائية، وبياناتك لا تغادر جهازك.">
+<title>Free CV Maker - Build your resume free, no sign-up</title>
+<meta name="description" content="Build a professional one-page resume for free in minutes and download it as PDF. No sign-up, no watermark, and your data never leaves your device.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -87,7 +87,7 @@ button.add{margin-top:10px;width:100%;border:1.5px dashed var(--ui);color:var(--
 </head>
 <body>
 <header class="hero">
-  <div class="langsw" id="langsw"><button data-l="ar">العربية</button><button data-l="en">English</button><button data-l="fr">Français</button></div>
+  <div class="langsw" id="langsw"><button data-l="en">English</button><button data-l="fr">Français</button></div>
   <span class="pill" data-t="pill"></span>
   <h1><span data-t="brand"></span><small data-t="brand2"></small></h1>
   <p data-t="lead"></p>
@@ -98,9 +98,9 @@ button.add{margin-top:10px;width:100%;border:1.5px dashed var(--ui);color:var(--
   <section class="panel" id="form">
     
     <div class="row top">
-      <input type="hidden" id="lang" value="ar"><div><label data-t="tpl"></label><select id="tplsel"></select></div>
+      <input type="hidden" id="lang" value="en"><div><label data-t="tpl"></label><select id="tplsel"></select></div>
       <div><label data-t="color"></label>
-        <select id="color" hidden><option value="#4f46e5">نيلي</option><option value="#0891b2">سماوي</option><option value="#059669">أخضر</option><option value="#7c3aed">بنفسجي</option><option value="#db2777">وردي</option><option value="#b91c1c">أحمر</option><option value="#0f172a">أسود</option></select>
+        <select id="color" hidden><option value="#4f46e5">Indigo</option><option value="#0891b2">Cyan</option><option value="#059669">Green</option><option value="#7c3aed">Purple</option><option value="#db2777">Pink</option><option value="#b91c1c">Red</option><option value="#0f172a">Black</option></select>
         <div class="colors" id="sw"></div></div>
     </div>
     <input type="hidden" id="tpl" value="modern">
@@ -149,20 +149,12 @@ button.add{margin-top:10px;width:100%;border:1.5px dashed var(--ui);color:var(--
 
 <script>
 const $ = id => document.getElementById(id);
-const KEY = 'cv-data-v2';
+const KEY = 'cv-data-v3';
 const fields = ['name','title','phone','email','city','link','summary','skills','langs','lang','color','tpl'];
 let state = { exp: [{}], edu: [{}] };
 
 const T = {
-ar:{dir:'rtl',pill:'مجاني 100% · بدون تسجيل · بدون علامة مائية',brand:'سيرة مجانًا',brand2:'FREE CV BUILDER',lead:'أنشئ سيرتك الذاتية الاحترافية في دقائق وحمّلها PDF. بياناتك تبقى على جهازك ولا تُرسل لأي مكان.',f1:'معاينة فورية',f2:'عربي · English · Français',f3:'جاهزة للطباعة A4',cta:'ابدأ الآن مجانًا',
- tpl:'الشكل',tpls:['عصري','كلاسيكي'],color:'اللون',s1:'البيانات الشخصية',s2:'نبذة عنك',s3:'الخبرات',s4:'التعليم',s5:'المهارات',s6:'اللغات',
- name:'الاسم الكامل',jobtitle:'المسمى الوظيفي',phone:'الهاتف',email:'البريد',city:'المدينة / الدولة',link:'رابط (لينكدإن أو موقع)',
- ph_sum:'جملتان أو ثلاث عن خبرتك وما تبحث عنه',ph_sk:'Excel, خدمة العملاء, اللغة الإنجليزية',ph_lg:'العربية (الأم)، الإنجليزية (جيد جدًا)',sk_hint:'افصل بينها بفاصلة',
- addexp:'+ إضافة خبرة',addedu:'+ إضافة مؤهل',pdf:'تنزيل PDF',clear:'مسح الكل',note:'عند الضغط على "تنزيل PDF" اختر "حفظ كـ PDF" كوجهة الطباعة. تُحفظ بياناتك في متصفحك فقط لتجدها عند عودتك.',
- preview:'المعاينة المباشرة',fab:'تنزيل PDF مجانًا',foot:'سيرة مجانًا · أداة مجانية تعمل داخل متصفحك',
- role:'المسمى',org:'جهة العمل',period:'الفترة (مثال: 2021 - 2024)',desc:'المهام والإنجازات',degree:'المؤهل',school:'الجامعة / المعهد',del:'حذف',confirm:'مسح كل البيانات؟',
- sum:'نبذة',exp:'الخبرات',edu:'التعليم',sk:'المهارات',lg:'اللغات',yourname:'اسمك هنا',doc:'السيرة الذاتية',pagetitle:'سيرة مجانًا - أنشئ سيرتك الذاتية مجانًا بدون تسجيل | Free CV'},
-en:{dir:'ltr',pill:'100% free · No sign-up · No watermark',brand:'Free CV Maker',brand2:'ONE-PAGE RESUME BUILDER',lead:'Build a professional one-page resume in minutes and download it as PDF. Your data stays on your device and is never uploaded.',f1:'Live preview',f2:'العربية · English · Français',f3:'A4 print-ready',cta:'Start free now',
+en:{dir:'ltr',pill:'100% free · No sign-up · No watermark',brand:'Free CV Maker',brand2:'ONE-PAGE RESUME BUILDER',lead:'Build a professional one-page resume in minutes and download it as PDF. Your data stays on your device and is never uploaded.',f1:'Live preview',f2:'English · Français',f3:'A4 print-ready',cta:'Start free now',
  tpl:'Style',tpls:['Modern','Classic'],color:'Color',s1:'Personal details',s2:'Summary',s3:'Experience',s4:'Education',s5:'Skills',s6:'Languages',
  name:'Full name',jobtitle:'Job title',phone:'Phone',email:'Email',city:'City / Country',link:'Link (LinkedIn or website)',
  ph_sum:'Two or three sentences about your experience and goals',ph_sk:'Excel, Customer service, Project management',ph_lg:'Arabic (native), English (fluent)',sk_hint:'Separate with commas',
@@ -170,7 +162,7 @@ en:{dir:'ltr',pill:'100% free · No sign-up · No watermark',brand:'Free CV Make
  preview:'Live preview',fab:'Download PDF free',foot:'Free CV Maker · A free tool that runs in your browser',
  role:'Job title',org:'Company',period:'Period (e.g. 2021 - 2024)',desc:'Duties & achievements',degree:'Degree',school:'University / School',del:'Delete',confirm:'Clear all data?',
  sum:'Summary',exp:'Experience',edu:'Education',sk:'Skills',lg:'Languages',yourname:'Your Name',doc:'Resume',pagetitle:'Free CV Maker - Build your resume free, no sign-up'},
-fr:{dir:'ltr',pill:'100 % gratuit · Sans inscription · Sans filigrane',brand:'CV Gratuit',brand2:'CRÉATEUR DE CV EN UNE PAGE',lead:'Créez un CV professionnel d’une page en quelques minutes et téléchargez-le en PDF. Vos données restent sur votre appareil.',f1:'Aperçu en direct',f2:'العربية · English · Français',f3:'Prêt à imprimer A4',cta:'Commencer gratuitement',
+fr:{dir:'ltr',pill:'100 % gratuit · Sans inscription · Sans filigrane',brand:'CV Gratuit',brand2:'CRÉATEUR DE CV EN UNE PAGE',lead:'Créez un CV professionnel d’une page en quelques minutes et téléchargez-le en PDF. Vos données restent sur votre appareil.',f1:'Aperçu en direct',f2:'English · Français',f3:'Prêt à imprimer A4',cta:'Commencer gratuitement',
  tpl:'Style',tpls:['Moderne','Classique'],color:'Couleur',s1:'Informations personnelles',s2:'Profil',s3:'Expérience',s4:'Formation',s5:'Compétences',s6:'Langues',
  name:'Nom complet',jobtitle:'Poste',phone:'Téléphone',email:'E-mail',city:'Ville / Pays',link:'Lien (LinkedIn ou site)',
  ph_sum:'Deux ou trois phrases sur votre expérience et vos objectifs',ph_sk:'Excel, Service client, Gestion de projet',ph_lg:'Arabe (langue maternelle), Anglais (courant)',sk_hint:'Séparez par des virgules',
@@ -226,7 +218,7 @@ function renderSheet(){
     ${v('summary') ? `<h3>${L.sum}</h3><p>${esc(v('summary'))}</p>` : ''}
     ${block('exp', state.exp, e => `<div class="e"><b>${esc(e.role)}</b>${e.org?' — '+esc(e.org):''}<div class="d">${esc(e.period)}</div><p>${esc(e.desc)}</p></div>`)}
     ${block('edu', state.edu, e => `<div class="e"><b>${esc(e.degree)}</b>${e.org?' — '+esc(e.org):''}<div class="d">${esc(e.period)}</div></div>`)}
-    ${v('skills') ? `<h3>${L.sk}</h3><div class="skills">${v('skills').split(/[,،\n]/).map(s=>s.trim()).filter(Boolean).map(s=>`<span>${esc(s)}</span>`).join('')}</div>` : ''}
+    ${v('skills') ? `<h3>${L.sk}</h3><div class="skills">${v('skills').split(/[,\n]/).map(s=>s.trim()).filter(Boolean).map(s=>`<span>${esc(s)}</span>`).join('')}</div>` : ''}
     ${v('langs') ? `<h3>${L.lg}</h3><p>${esc(v('langs'))}</p>` : ''}</div>`;
   document.title = v('name') ? L.doc + ' - ' + v('name') : L.pagetitle;
 }
@@ -250,7 +242,7 @@ $('tplsel').onchange = () => { $('tpl').value = $('tplsel').value; refresh(); };
 $('sw').onclick = e => { if(e.target.dataset.c){ $('color').value = e.target.dataset.c; paintSw(); refresh(); } };
 $('clear').onclick = () => { if(confirm(t('confirm'))){ try{localStorage.removeItem(KEY)}catch(e){} location.reload(); } };
 
-load(); if(!T[$('lang').value]) $('lang').value='ar'; if(!['modern','classic'].includes($('tpl').value)) $('tpl').value='modern'; applyLang(); if(![...$('color').options].some(o=>o.value===$('color').value)) $('color').selectedIndex=0; renderForm(); renderSheet(); paintSw();
+load(); if(!T[$('lang').value]) $('lang').value='en'; if(!['modern','classic'].includes($('tpl').value)) $('tpl').value='modern'; applyLang(); if(![...$('color').options].some(o=>o.value===$('color').value)) $('color').selectedIndex=0; renderForm(); renderSheet(); paintSw();
 </script>
 </body>
 </html>
