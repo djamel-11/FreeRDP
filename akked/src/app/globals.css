@@ -27,3 +27,6 @@ form.inline>div{flex:1 1 130px}form.inline>div input{width:100%}
 .bub .meta{display:block;font-size:11px;color:var(--muted);margin-top:2px}
 a.plain{color:inherit;display:block}.acts{display:flex;gap:6px;margin-top:8px}.acts form{flex:1}
 button.mini{width:100%;padding:8px 4px;font-size:14px;border-radius:8px}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}.plans .card{margin:0 0 12px}
+.warnbar{background:#fef3c7;color:#92400e;padding:10px;border-radius:8px;margin-bottom:12px}
+.foot{text-align:center;color:var(--muted);font-size:14px;margin:24px 0 8px}.legal section{margin-bottom:12px}.legal p{line-height:1.7}

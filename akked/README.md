@@ -22,6 +22,12 @@ Moroccan phone normalization · filters/search · wa.me WhatsApp with editable D
 - **Smart add** (`/orders/quick`): paste an order as received (WhatsApp/Instagram, Arabic/French/one-line or labelled, several at once) → name, phone, city (AMEEX spelling), address, product, price are detected; review and save.
 - **Confirmation mode** (`/confirm`): one order at a time. *To send* lane: big WhatsApp button, then the order moves on. *Awaiting reply* lane: ✅ Confirmed / ❌ Cancelled / 📵 No answer / ⏰ in 2h / tomorrow. Orders with earlier refusals show a warning.
 
+## Subscription, backups and legal
+- **Billing** (`/billing`, owner): current plan/days left/usage, plan cards, the admin's payment instructions (bank / CashPlus / Wafacash), and an "I paid" form (reference + optional proof image/PDF ≤ 2 MB, verified by file signature). Banner: 3 days before the end and when expired.
+- **Admin** (`/admin`): pending payments with proof → **Activate** (adds 30 days from today, or from the current end if still active) or **Reject**; platform settings (payment instructions, support WhatsApp, operator name/contact/jurisdiction used by the legal pages); nav badge shows pending count.
+- **Backups:** a consistent SQLite snapshot at startup (if older than 20 h) and every 6 h in `data/backups` (last 14; override with `AKKED_BACKUP_DIR`). Admin can download a fresh snapshot (`/admin/backup`) — **keep a copy off the server**. Restore = stop the app, replace `data/akked.db` with a snapshot, start.
+- **Legal & data rights:** public `/terms` and `/privacy` (Arabic/French; fill the operator details in `/admin`; **have them reviewed by a lawyer**), consent checkbox at signup, **My data** (settings): export everything as JSON, erase a customer's data on request, delete the account. Security headers set in `next.config.js`.
+
 ## Teams, accounts and safety
 - **Edit order** (`/orders/:id/edit`): name, phone, city (AMEEX list with suggestions), address, product, price… All edits are logged in the order history.
 - **Message variables:** `{name} {product} {price} {city} {address} {order_number} {size} {qty} {shop}`; a "send your address" line is added automatically when the address is missing.
@@ -55,8 +61,8 @@ Verify with one real parcel before relying on it. `AMEEX_BASE_URL` overrides the
 - No native `.xlsx` import (paste cells or save as CSV). No email invites or callback reminders yet.
 - WhatsApp inbox is tested against a mock of Meta's API only; verify with a real test number before selling. Embedded Signup (one-click connect) is not built; sellers paste the token for now. Polling (6 s) instead of push for the inbox.
 - Tenant isolation is enforced in application queries (every query filters by `workspace_id`), not by DB-level RLS. Moving to Postgres/Supabase should add RLS.
-- No login rate limiting; add before production. Use HTTPS (cookie is `secure` in production).
-- Darija texts need native review. CNDP / law 09-08: add privacy page, data export/deletion tools, and file your declaration.
+- Login/reset are rate-limited; still use HTTPS in production (cookie is `secure` there) and put the app behind a reverse proxy/CDN for network-level limits.
+- Darija texts need native review. Legal texts are templates: get them reviewed; CNDP declaration/authorisation (law 09-08) is yours to file.
 
 ## Deploy (test)
 SQLite needs a persistent disk: use a VPS / Railway / Fly.io volume (`npm run build && npm start`, set `AKKED_DB=/data/akked.db`).

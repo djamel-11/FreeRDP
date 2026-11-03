@@ -60,6 +60,13 @@ export function db(): Db {
   addCol('workspaces', 'ameex_api_key_enc', 'TEXT');
   addCol('orders', 'ameex_parcel_code', 'TEXT');
   addCol('orders', 'ameex_error', 'TEXT');
+  d.exec(`CREATE TABLE IF NOT EXISTS platform_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+  CREATE TABLE IF NOT EXISTS payments (
+    id INTEGER PRIMARY KEY, workspace_id INTEGER NOT NULL REFERENCES workspaces(id), plan TEXT NOT NULL, amount REAL NOT NULL,
+    method TEXT NOT NULL, reference TEXT NOT NULL, note TEXT, proof BLOB, proof_mime TEXT,
+    status TEXT NOT NULL DEFAULT 'pending', created_at TEXT DEFAULT CURRENT_TIMESTAMP, decided_at TEXT, decided_by INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS idx_payments_ws ON payments(workspace_id, id);`);
   addCol('users', 'recovery_hash', 'TEXT');
   addCol('orders', 'claimed_by', 'INTEGER');
   addCol('orders', 'claimed_at', 'TEXT');

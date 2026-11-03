@@ -3,18 +3,40 @@ import { requireAdmin } from '@/lib/auth';
 import { getT } from '@/lib/i18n';
 import { db } from '@/lib/db';
 import { monthlyUsage } from '@/lib/orders';
-import { PLANS } from '@/lib/plans';
+import { PLANS, type PlanKey } from '@/lib/plans';
+import { pendingPayments } from '@/lib/billing';
+import { getSetting } from '@/lib/settings';
 import { cookies } from 'next/headers';
-import { adminImportCityIds, adminResetOwnerPassword, adminSetSubscription } from '../actions';
+import { adminDecidePayment, adminImportCityIds, adminResetOwnerPassword, adminSaveSettings, adminSetSubscription } from '../actions';
 export default async function Admin({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const sp = await searchParams;
   const tmp = (await cookies()).get('akked_tmp')?.value?.split('|');
+  const pay = pendingPayments();
   const nIds = (db().prepare('SELECT COUNT(*) c FROM ameex_cities').get() as any).c;
   await requireAdmin(); const { t } = await getT();
   const list = db().prepare(`SELECT w.*, (SELECT email FROM users WHERE workspace_id = w.id AND role='owner' LIMIT 1) owner,
     (SELECT COUNT(*) FROM users WHERE workspace_id = w.id) users FROM workspaces w ORDER BY id DESC`).all() as any[];
   return (<>{tmp && <div className="ok"><ClearFlash />{t.tempShown}: <bdi dir="ltr">{tmp[0]} / <b>{tmp[1]}</b></bdi></div>}
     <h1>{t.admin}</h1>
+    {sp.saved && <div className="ok">✔</div>}
+    <div className="card"><h2>{t.pendingPay} ({pay.length})</h2>
+      {pay.length === 0 && <p className="muted">{t.none}</p>}
+      {pay.map((p) => <div key={p.id} className="o">
+        <div className="top"><strong>{p.shop}</strong><span dir="ltr">{PLANS[p.plan as PlanKey].name} · {p.amount} MAD</span></div>
+        <div className="muted">{(t as any)['m_' + p.method]} · <bdi>{p.reference}</bdi> · {String(p.created_at).slice(0, 16)}{p.note ? ` · ${p.note}` : ''}</div>
+        <div className="acts">{p.has_proof ? <a className="btn sec mini" href={`/admin/proof/${p.id}`} target="_blank" rel="noopener noreferrer">{t.proofView}</a> : null}
+          <form action={adminDecidePayment.bind(null, p.id, true)}><button className="mini ok">{t.approve}</button></form>
+          <form action={adminDecidePayment.bind(null, p.id, false)}><button className="mini danger">{t.reject}</button></form></div></div>)}
+    </div>
+    <div className="card"><h2>{t.adminSettings}</h2>
+      <form action={adminSaveSettings}>
+        <label>{t.payInstr}</label><textarea name="payment_instructions" rows={5} defaultValue={getSetting('payment_instructions')} />
+        <label>{t.supportWa}</label><input name="support_whatsapp" dir="ltr" defaultValue={getSetting('support_whatsapp')} placeholder="+2126XXXXXXXX" />
+        <div className="row"><div><label>{t.operatorName}</label><input name="operator_name" defaultValue={getSetting('operator_name')} /></div>
+          <div><label>{t.operatorContact}</label><input name="operator_contact" defaultValue={getSetting('operator_contact')} /></div>
+          <div><label>{t.jurisdiction}</label><input name="jurisdiction" defaultValue={getSetting('jurisdiction')} /></div></div>
+        <p><button>{t.save}</button></p></form>
+      <p className="muted">{t.backupHint}</p><p><a className="btn sec" href="/admin/backup">⬇ {t.downloadBackup}</a></p></div>
     <div className="card"><h2>AMEEX city IDs ({nIds})</h2>
       {sp.cities_ok && <div className="ok">OK: {sp.cities_ok}{sp.cities_bad ? ` · unmatched: ${sp.cities_bad}` : ''}</div>}
       <form action={adminImportCityIds}><textarea name="text" rows={5} dir="ltr" placeholder={'1,Casablanca\n2,Rabat'} /><p><button>Import</button></p></form></div>

@@ -15,6 +15,9 @@ import { canonicalCity } from '@/lib/cities';
 import { decrypt, encrypt } from '@/lib/secrets';
 import { sendParcel } from '@/lib/ameex';
 import { sendText, sendTemplate } from '@/lib/whatsapp';
+import { checkProof, createPayment, decidePayment } from '@/lib/billing';
+import { setSetting, SETTING_KEYS } from '@/lib/settings';
+import { deleteWorkspace, eraseCustomer } from '@/lib/dataRights';
 import { recordMessage, waCreds, windowOpen } from '@/lib/inbox';
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
@@ -29,6 +32,7 @@ const flash = async (name: string, value: string) => (await cookies()).set(name,
 export async function signup(f: FormData) {
   const email = s(f, 'email').toLowerCase(), pw = s(f, 'password');
   if (!email.includes('@') || pw.length < 8 || !s(f, 'store')) redirect('/signup?error=invalid');
+  if (s(f, 'agree') !== 'on') redirect('/signup?error=agree');
   if (db().prepare('SELECT 1 FROM users WHERE email = ?').get(email)) redirect('/signup?error=exists');
   const { userId, recoveryCode } = createWorkspaceWithOwner(s(f, 'store'), email, s(f, 'name'), pw);
   await startSession(userId);
@@ -342,4 +346,45 @@ export async function createDemoOrders() {
   const me = await requireSession();
   createOrders(me.workspaceId, me.userId, DEMO_ORDERS, 'demo');
   redirect('/confirm');
+}
+
+export async function submitPayment(f: FormData) {
+  const me = await requireOwner();
+  let proof = null;
+  const file = f.get('proof');
+  if (file instanceof File && file.size > 0) {
+    proof = checkProof(new Uint8Array(await file.arrayBuffer()));
+    if (!proof) redirect('/billing?error=proof');
+  }
+  const r = createPayment(me.workspaceId, { plan: s(f, 'plan'), method: s(f, 'method'), reference: s(f, 'reference'), note: s(f, 'note'), proof });
+  if (!r.ok) redirect('/billing?error=' + r.error);
+  redirect('/billing?sent=1');
+}
+
+export async function adminDecidePayment(id: number, approve: boolean, _fd?: FormData) {
+  const me = await requireAdmin();
+  decidePayment(id, approve, me.userId);
+  revalidatePath('/admin');
+  redirect('/admin');
+}
+
+export async function adminSaveSettings(f: FormData) {
+  await requireAdmin();
+  for (const k of SETTING_KEYS) setSetting(k, s(f, k).slice(0, 2000));
+  redirect('/admin?saved=1');
+}
+
+export async function eraseCustomerAction(f: FormData) {
+  const me = await requireOwner();
+  const r = eraseCustomer(me.workspaceId, s(f, 'phone'));
+  redirect(r.ok ? `/settings/data?erased=${r.orders}` : '/settings/data?error=phone');
+}
+
+export async function deleteAccountAction(f: FormData) {
+  const me = await requireOwner();
+  const ws = getWorkspace(me.workspaceId);
+  if (s(f, 'confirm') !== ws.name) redirect('/settings/data?error=confirm');
+  deleteWorkspace(me.workspaceId);
+  (await cookies()).delete('akked_session');
+  redirect('/login');
 }
