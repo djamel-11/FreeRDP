@@ -54,6 +54,8 @@ export function createFromPreset(wsId: number, connectorKey: string, creds: Reco
 }
 
 export const setConfig = (wsId: number, id: number, cfg: ExportConfig) => void db().prepare('UPDATE carriers SET config = ? WHERE workspace_id = ? AND id = ?').run(JSON.stringify(cfg), wsId, id);
+export const setTemplate = (wsId: number, id: number, bytes: Uint8Array | null, name: string | null) =>
+  void db().prepare('UPDATE carriers SET template = ?, template_name = ? WHERE workspace_id = ? AND id = ?').run(bytes, name, wsId, id);
 export const renameCarrier = (wsId: number, id: number, name: string) => void db().prepare('UPDATE carriers SET name = ? WHERE workspace_id = ? AND id = ?').run(name.trim().slice(0, 60), wsId, id);
 export function setCreds(wsId: number, id: number, creds: Record<string, string>, keepEmptySecrets = true) {
   const cur = getCreds(wsId, id) ?? {}; const next: Record<string, string> = { ...cur };

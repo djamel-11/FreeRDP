@@ -27,6 +27,18 @@ export function suggestSource(header: string): Source {
   return 'empty';
 }
 
+const normHeader = (h: string) => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}]/gu, '');
+/** New version of a carrier's model: keep the seller's choices for headers that are still there, suggest for new ones. */
+export function mergeMapping(old: ColumnMap[], headers: { col: number; header: string }[]): { columns: ColumnMap[]; added: number } {
+  const byName = new Map(old.map((c) => [normHeader(c.header), c])); let added = 0;
+  const columns = headers.map((h): ColumnMap => {
+    const prev = byName.get(normHeader(h.header));
+    if (prev) return { col: h.col, header: h.header, source: prev.source, ...(prev.fixed ? { fixed: prev.fixed } : {}) };
+    added++; return { col: h.col, header: h.header, source: suggestSource(h.header) };
+  });
+  return { columns, added };
+}
+
 export const nationalPhone = (p: string) => (p.startsWith('+212') ? '0' + p.slice(4) : p);
 export function valueFor(m: ColumnMap, o: ExportRow, today = new Date()): string | number {
   switch (m.source) {

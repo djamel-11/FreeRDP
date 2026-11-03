@@ -5,9 +5,9 @@ import { getT } from '@/lib/i18n';
 import { SOURCES } from '@/lib/exportEngine';
 import { CONNECTORS } from '@/lib/connectors';
 import { citiesText, cityCount, getCarrier } from '@/lib/carriers';
-import { deleteCarrierAction, saveCarrierCities, saveCarrierCreds, saveCarrierMapping } from '../../actions';
+import { deleteCarrierAction, replaceCarrierTemplate, saveCarrierCities, saveCarrierCreds, saveCarrierMapping } from '../../actions';
 
-export default async function CarrierPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ created?: string; saved?: string; cities?: string; unmatched?: string }> }) {
+export default async function CarrierPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ created?: string; saved?: string; cities?: string; unmatched?: string; replaced?: string; error?: string }> }) {
   const me = await requireOwner(); const { t } = await getT();
   const { id } = await params; const sp = await searchParams;
   const c = getCarrier(me.workspaceId, Number(id)); if (!c) notFound();
@@ -18,6 +18,8 @@ export default async function CarrierPage({ params, searchParams }: { params: Pr
     <h1>{c.name} <span className={`badge ${conn ? 'confirmed' : ''}`}>{conn ? '⚡ ' + t.connected : '📄 ' + t.fileOnly}</span></h1>
     {sp.created && <div className="ok">{t.created}</div>}
     {sp.saved && <div className="ok">{t.saved}</div>}
+    {sp.replaced !== undefined && <div className="ok">{t.modelReplaced}: {sp.replaced}</div>}
+    {sp.error && <div className="err">{(t as any)['carrierErr_' + sp.error] ?? '✖'}</div>}
     {sp.cities && <div className="ok">{t.citiesSaved}: {sp.cities}{unmatched.length > 0 && <div className="muted">{t.citiesUnmatched}: {unmatched.join(' · ')}</div>}</div>}
 
     <div className="card"><h2>{t.mappingTitle}</h2><p className="muted">{t.mappingHint}</p>
@@ -29,6 +31,11 @@ export default async function CarrierPage({ params, searchParams }: { params: Pr
             <select name={'src_' + col.col} defaultValue={col.source}>{SOURCES.map((s) => <option key={s} value={s}>{(t as any)['src_' + s]}</option>)}</select>
             <input name={'fixed_' + col.col} defaultValue={col.fixed ?? ''} placeholder={t.src_fixed} aria-label={t.src_fixed} /></div>))}
         <p><button>{t.save}</button> <a className="btn sec" href={`/export?carrier=${c.id}&sample=1`}>⬇ {t.sampleFile}</a></p></form></div>
+
+    <div className="card"><h2>📤 {t.replaceModel}</h2>
+      <p className="muted">{t.modelCurrent}: <bdi dir="ltr">{c.template_name ?? (c.config.output === 'csv' ? 'CSV' : '—')}</bdi></p>
+      <form action={replaceCarrierTemplate.bind(null, c.id)}><input type="file" name="template" accept=".xlsx,.csv,.txt" required />
+        <p><button className="sec">{t.replaceBtn}</button></p></form></div>
 
     <div className="card"><h2>{t.citiesTitle} ({cityCount(c.id)})</h2><p className="muted">{t.citiesHint}</p>
       {conn?.cityFor && <p className="muted">{t.citiesBuiltin}</p>}

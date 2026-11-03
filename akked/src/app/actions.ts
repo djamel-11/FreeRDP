@@ -17,8 +17,8 @@ import { sendParcel } from '@/lib/ameex';
 import { CANCEL_REASONS } from '@/lib/reasons';
 import { bulkSend, sendOrderViaCarrier, trackWorkspace } from '@/lib/carrierFlow';
 import { CONNECTORS } from '@/lib/connectors';
-import { createCarrier, createFromPreset, deleteCarrier, getCarrier, listCarriers, renameCarrier, setCities, setConfig, setCreds } from '@/lib/carriers';
-import { readTemplate, SOURCES, suggestSource, type ColumnMap, type ExportConfig, type Source } from '@/lib/exportEngine';
+import { createCarrier, createFromPreset, deleteCarrier, getCarrier, listCarriers, renameCarrier, setCities, setConfig, setCreds, setTemplate } from '@/lib/carriers';
+import { mergeMapping, readTemplate, SOURCES, suggestSource, type ColumnMap, type ExportConfig, type Source } from '@/lib/exportEngine';
 import { parseSheetUrl, syncSheet } from '@/lib/sheets';
 import { sendText, sendTemplate } from '@/lib/whatsapp';
 import { checkProof, createPayment, decidePayment } from '@/lib/billing';
@@ -373,6 +373,8 @@ export async function deleteAccountAction(f: FormData) {
 }
 
 // ---------------- delivery companies (carriers) ----------------
+/** Old binary .xls (OLE2) can't be read: ask the seller to re-save it as .xlsx or CSV. */
+const isOldXls = (b: Uint8Array) => b[0] === 0xd0 && b[1] === 0xcf && b[2] === 0x11 && b[3] === 0xe0;
 /** Add AMEEX (or any built-in connector) with its credentials: API + the company's own export template. */
 export async function addConnectorCarrier(connectorKey: string, f: FormData) {
   const me = await requireOwner();
@@ -394,6 +396,7 @@ export async function addFileCarrier(f: FormData) {
     bytes = new Uint8Array(await file.arrayBuffer()); filename = file.name;
   } else if (s(f, 'headers')) bytes = new TextEncoder().encode(s(f, 'headers').replace(/\n/g, ',').slice(0, 2000));
   if (!bytes) redirect('/carriers/new?error=file');
+  if (isOldXls(bytes!)) redirect('/carriers/new?error=xls');
   const tpl = await readTemplate(bytes!, filename);
   if (!tpl) redirect('/carriers/new?error=parse');
   const columns: ColumnMap[] = tpl!.headers.map((h) => ({ col: h.col, header: h.header, source: suggestSource(h.header) }));
@@ -454,4 +457,21 @@ export async function trackNow() {
   const me = await requireOwner();
   const r = await trackWorkspace(me.workspaceId);
   redirect(`/orders?tracked=${r.checked}-${r.delivered}-${r.returned}`);
+}
+
+/** The company changed its model: upload the new file; the seller's column choices are kept for headers that still exist. */
+export async function replaceCarrierTemplate(id: number, f: FormData) {
+  const me = await requireOwner();
+  const c = getCarrier(me.workspaceId, id); if (!c) redirect('/carriers');
+  const file = f.get('template');
+  if (!(file instanceof File) || file.size === 0) redirect(`/carriers/${id}?error=file`);
+  if ((file as File).size > 2_000_000) redirect(`/carriers/${id}?error=big`);
+  const bytes = new Uint8Array(await (file as File).arrayBuffer());
+  if (isOldXls(bytes)) redirect(`/carriers/${id}?error=xls`);
+  const tpl = await readTemplate(bytes, (file as File).name);
+  if (!tpl) redirect(`/carriers/${id}?error=parse`);
+  const { columns, added } = mergeMapping(c!.config.columns, tpl!.headers);
+  setConfig(me.workspaceId, id, { headerRow: tpl!.headerRow, columns, output: tpl!.kind });
+  setTemplate(me.workspaceId, id, tpl!.kind === 'xlsx' ? bytes : null, (file as File).name);
+  redirect(`/carriers/${id}?replaced=${added}`);
 }

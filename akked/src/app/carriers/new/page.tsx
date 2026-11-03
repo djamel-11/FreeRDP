@@ -8,15 +8,15 @@ export default async function NewCarrier({ searchParams }: { searchParams: Promi
   await requireOwner(); const { t } = await getT(); const sp = await searchParams;
   return (<><p><Link href="/carriers">‹ {t.carriers}</Link></p><h1>{t.newCarrier}</h1>
     {sp.error && <div className="err">{(t as any)['carrierErr_' + sp.error] ?? '✖'}</div>}
-    {connectorList().map((c) => (
-      <div key={c.key} className="card"><h2>⚡ {c.name} <span className="muted">({t.fromConnector})</span></h2>
-        <form action={addConnectorCarrier.bind(null, c.key)}>
-          {c.fields.map((f) => (<div key={f.key}><label>{f.label}</label><input name={f.key} type={f.secret ? 'password' : 'text'} dir="ltr" autoComplete="off" required /></div>))}
-          <p><button>{t.createBtn}</button></p></form></div>))}
-    <div className="card"><h2>📄 {t.otherCarrier}</h2>
+    <div className="card" id="upload" style={{ borderColor: 'var(--brand)', borderWidth: 2 }}><h2>📤 {t.uploadModel}</h2><p className="muted">{t.modelStepHint}</p>
       <form action={addFileCarrier}>
         <label>{t.carrierName}</label><input name="name" required maxLength={60} />
         <label>{t.uploadTemplate}</label><input type="file" name="template" accept=".xlsx,.csv,.txt" />
         <label>{t.orPasteHeaders}</label><textarea name="headers" rows={2} dir="ltr" placeholder="Nom, Téléphone, Ville, Adresse, Montant, Produit" />
-        <p><button>{t.createBtn}</button></p></form></div></>);
+        <p><button>{t.createBtn}</button></p></form></div>
+    {connectorList().map((c) => (
+      <div key={c.key} className="card"><h2>⚡ {c.name} <span className="muted">({t.fromConnector})</span></h2>
+        <form action={addConnectorCarrier.bind(null, c.key)}>
+          {c.fields.map((f) => (<div key={f.key}><label>{f.label}</label><input name={f.key} type={f.secret ? 'password' : 'text'} dir="ltr" autoComplete="off" required /></div>))}
+          <p><button>{t.createBtn}</button></p></form></div>))}</>);
 }

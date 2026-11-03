@@ -26,6 +26,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
   const used = monthlyUsage(me.workspaceId); const lim = PLANS[ws.plan as PlanKey].orders;
   return (<>
     <Onboarding wsId={me.workspaceId} t={t as any} />
+    {me.role === 'owner' && carriers.length === 0 && <div className="card" style={{ borderColor: 'var(--brand)' }}><p>📤 {t.uploadModelCta}</p><p><Link className="btn" href="/carriers/new#upload">{t.uploadModel}</Link></p></div>}
     {sp.bulk && <div className={bf === '0' ? 'ok' : 'err'}>{t.bulkSent}: {bs} · {t.bulkFailed}: {bf}{sp.bf ? ' — ' + sp.bf.split(',').map((x) => { const [n, e] = x.split(':'); return `${n} (${(t as any)['ameex_' + e] ?? e})`; }).join(' · ') : ''}</div>}
     {sp.tracked && <div className="ok">{t.trackedN}: {tc} · {t.deliveredLbl}: {td} · {t.returnedLbl}: {tr}</div>}
     {sp.added && <div className="ok">{t.added}: {sp.added}{sp.skipped && sp.skipped !== '0' ? ` · ${t.skipped}: ${sp.skipped}` : ''}</div>}
@@ -38,6 +39,7 @@ export default async function Orders({ searchParams }: { searchParams: Promise<R
       <Link className="btn sec" href="/orders/new">{t.fullForm}</Link>
       {me.role === 'owner' && <>{carriers.map((c) => <a key={c.id} className="btn sec" href={`/export?carrier=${c.id}`}>{t.exportFor} {c.name}</a>)}
       <a className="btn sec" href="/export?format=generic">{t.export} CSV</a>
+      <Link className="btn sec" href="/carriers/new#upload">📤 {t.uploadModel}</Link>
       <Link className="btn sec" href="/carriers">🚚 {t.carriers}</Link></>}
     </div>
     {((unsent > 0 && apiCarriers.length > 0) || (shipped > 0 && canTrack && me.role === 'owner')) && <div className="inline" style={{ marginBottom: 12 }}>

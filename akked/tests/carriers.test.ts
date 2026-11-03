@@ -113,3 +113,27 @@ describe('carriers, credentials and tenancy', () => {
     expect(db().prepare(`SELECT COUNT(*) c FROM orders WHERE workspace_id = 1`).get().c).toBe(4);
   });
 });
+
+describe('uploading a new version of the carrier model', () => {
+  it('keeps the seller’s choices for headers that still exist (accents/case/spacing ignored), suggests for new ones', () => {
+    const old = [
+      { col: 1, header: 'Nom du client', source: 'customer_name' }, { col: 2, header: 'GSM', source: 'phone_e164' },
+      { col: 3, header: 'Type', source: 'fixed', fixed: 'COD' }, { col: 4, header: 'Poids', source: 'empty' },
+    ];
+    const next = [
+      { col: 1, header: 'Réf', }, { col: 2, header: 'NOM DU  CLIENT' }, { col: 3, header: 'Gsm' }, { col: 4, header: 'Ville' }, { col: 5, header: 'type' }, { col: 6, header: 'Poids' },
+    ].map((h: any) => ({ ...h, header: h.header }));
+    const m = E.mergeMapping(old as any, next as any);
+    expect(m.columns.map((c: any) => c.source)).toEqual(['order_number', 'customer_name', 'phone_e164', 'city', 'fixed', 'empty']);
+    expect(m.columns[4].fixed).toBe('COD');       // fixed value kept
+    expect(m.columns[2].source).toBe('phone_e164'); // the seller's non-default choice survives (default would be phone_national)
+    expect(m.added).toBe(2);                        // "Réf" and "Ville" are new
+  });
+  it('can swap the stored template and mapping', () => {
+    const id = C.createCarrier(1, { name: 'Swap', config: { headerRow: 1, output: 'xlsx', columns: [] }, template: new Uint8Array([0x50, 0x4b, 1]), templateName: 'old.xlsx' });
+    C.setTemplate(1, id, null, 'new.csv');
+    expect(C.getTemplate(1, id)).toBeNull(); expect(C.getCarrier(1, id).template_name).toBe('new.csv');
+    C.setTemplate(2, id, new Uint8Array([1]), 'hack.xlsx');   // other seller can't touch it
+    expect(C.getCarrier(1, id).template_name).toBe('new.csv');
+  });
+});
