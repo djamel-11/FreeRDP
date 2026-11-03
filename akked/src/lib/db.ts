@@ -1,16 +1,33 @@
-import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const g = globalThis as unknown as { __akkedDb?: Database.Database };
+/** Thin wrapper over Node's built-in SQLite (node:sqlite, Node >= 22.13) — no native build step needed. */
+export interface Stmt { run(...a: any[]): { changes: number | bigint; lastInsertRowid: number | bigint }; get(...a: any[]): any; all(...a: any[]): any[] }
+export interface Db { prepare(sql: string): Stmt; exec(sql: string): void; transaction<T>(fn: () => T): () => T; close(): void }
 
-export function db(): Database.Database {
+const g = globalThis as unknown as { __akkedDb?: Db };
+
+function open(file: string): Db {
+  const sqlite = (process as any).getBuiltinModule?.('node:sqlite');
+  if (!sqlite) throw new Error('This app needs Node.js 22.13 or newer (built-in SQLite). Please install the current LTS from nodejs.org.');
+  const raw = new sqlite.DatabaseSync(file);
+  return {
+    prepare: (sql) => raw.prepare(sql),
+    exec: (sql) => raw.exec(sql),
+    close: () => raw.close(),
+    transaction: (fn) => () => {
+      raw.exec('BEGIN');
+      try { const r = fn(); raw.exec('COMMIT'); return r; } catch (e) { raw.exec('ROLLBACK'); throw e; }
+    },
+  };
+}
+
+export function db(): Db {
   if (g.__akkedDb) return g.__akkedDb;
   const file = process.env.AKKED_DB || path.join(process.cwd(), 'data', 'akked.db');
   if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
-  const d = new Database(file);
-  d.pragma('journal_mode = WAL');
-  d.pragma('foreign_keys = ON');
+  const d = open(file);
+  d.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
   d.exec(`
   CREATE TABLE IF NOT EXISTS workspaces (
     id INTEGER PRIMARY KEY, name TEXT NOT NULL, plan TEXT NOT NULL DEFAULT 'trial',
