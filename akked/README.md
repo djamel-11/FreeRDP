@@ -57,6 +57,9 @@ Sellers connect their own number (Settings → WhatsApp: **Phone number ID**, **
 
 Meta setup (platform owner, once): create a Meta app + WhatsApp product, verify the business, create a **utility template** (body with `{{1}}..{{4}}` plus quick-reply buttons "نعم، أؤكد" / "لا، ألغِ"), subscribe the webhook to the `messages` field. Per seller: either their own app token for the test, or Embedded Signup (incl. *Coexistence*, which keeps the number on the WhatsApp Business app and links it by QR) once you are an approved Tech Provider — not built yet. Meta bills API messages (templates; service messages beyond the free monthly allowance).
 
+## Android app (APK)
+`android/` builds a ~37 KB signed APK (WebView shell: server-address screen, file picker, downloads, WhatsApp/phone hand-off). Needs your Akked server (LAN address for tests, `https://` later). See `android/README.md` — includes rebuild steps, limits, and the Play Store note.
+
 ## Delivery companies (any carrier)
 AMEEX is just the first built-in example. **Settings → Delivery companies** (`/carriers`) lets a seller add as many companies as they use:
 - **Any company, no code:** upload its Excel/CSV template (or paste its column names). Akked finds the header row (even under a title row), **suggests what each column means** (name, phone 06…, city, address, COD price, product…), and the seller confirms. Exports fill the company's *own* template (styling kept) or generate a CSV. A *sample file* button lets them check before the first real export.
