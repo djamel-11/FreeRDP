@@ -1,218 +1,450 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MCP Hub - Discover MCP servers</title>
-<meta name="description" content="Search the official Model Context Protocol registry. Find MCP servers and copy ready-made setup for Claude, Cursor and VS Code.">
+<meta name="description" content="Search the official Model Context Protocol registry. Browse MCP servers by category and copy ready-made setup for Claude, Cursor and VS Code.">
 <style>
-:root{--bg:#0b0d12;--card:#141824;--card2:#1b2031;--fg:#e8ebf3;--mut:#8b94a8;--bd:#262c3f;--acc:#7c8cff;--acc2:#a78bfa;--ok:#34d399;--r:14px}
-@media(prefers-color-scheme:light){:root{--bg:#f5f6fb;--card:#fff;--card2:#f1f3fa;--fg:#0f1425;--mut:#5d667c;--bd:#e1e5f0;--acc:#4f46e5;--acc2:#7c3aed}}
+:root{--bg:#fff;--bg2:#f6f7fb;--card:#fff;--fg:#0f172a;--mut:#64748b;--bd:#e5e7eb;--acc:#2563eb;--accfg:#fff;--soft:#eff4ff;--ok:#059669;--star:#f59e0b;--code:#0f172a;--codefg:#e2e8f0;--sh:0 1px 2px #0f172a0d}
+:root[data-theme=dark]{--bg:#0b0f19;--bg2:#0f1524;--card:#121a2b;--fg:#e6eaf3;--mut:#94a0b8;--bd:#222c42;--acc:#5b8cff;--accfg:#0b0f19;--soft:#16213a;--ok:#34d399;--code:#070a12;--codefg:#dbe3f5;--sh:none}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}
-a{color:var(--acc)}
-.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
-nav{display:flex;justify-content:space-between;align-items:center;padding:18px 0}
-.logo{font-weight:800;font-size:1.15rem;display:flex;align-items:center;gap:8px}
-.logo i{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;color:#fff;font-style:normal;font-size:.9rem}
-nav a{color:var(--mut);text-decoration:none;font-size:.9rem;margin-inline-start:18px}
-nav a:hover{color:var(--fg)}
-.hero{text-align:center;padding:36px 0 26px}
-.hero h1{margin:0;font-size:clamp(2rem,5vw,3.2rem);line-height:1.15;font-weight:800;letter-spacing:-.02em}
-.hero h1 span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero p{color:var(--mut);max-width:620px;margin:14px auto 0;font-size:1.05rem}
-.search{max-width:680px;margin:26px auto 0;position:relative}
-.search input{width:100%;padding:16px 20px 16px 48px;border-radius:99px;border:1.5px solid var(--bd);background:var(--card);color:var(--fg);font:inherit;font-size:1.02rem;outline:0;transition:.15s}
-.search input:focus{border-color:var(--acc);box-shadow:0 0 0 4px #7c8cff2b}
-.search svg{position:absolute;left:18px;top:50%;translate:0 -50%;width:20px;height:20px;color:var(--mut)}
-.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:18px 0 6px}
-.chip{border:1px solid var(--bd);background:var(--card);color:var(--fg);padding:6px 14px;border-radius:99px;font:inherit;font-size:.85rem;cursor:pointer}
-.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
-.meta{display:flex;justify-content:space-between;color:var(--mut);font-size:.85rem;margin:18px 0 12px;min-height:1.4em}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:.15s;text-align:left;font:inherit;color:inherit}
-.card:hover{border-color:var(--acc);transform:translateY(-2px)}
-.card h3{margin:0;font-size:1rem;line-height:1.3;word-break:break-word}
-.card .ns{color:var(--mut);font-size:.78rem;word-break:break-all}
-.card p{margin:0;color:var(--mut);font-size:.88rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;flex:1}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;line-height:1.55}
+a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
+button{font:inherit;color:inherit}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+/* header */
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd)}
+.bar{display:flex;align-items:center;gap:16px;padding:14px 0}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.25rem;color:var(--fg)!important;text-decoration:none!important;white-space:nowrap}
+.logo i{width:34px;height:34px;border-radius:9px;background:var(--acc);color:var(--accfg);display:grid;place-items:center;font-style:normal;font-size:1.05rem}
+.sbox{flex:1;max-width:560px;position:relative}
+.sbox svg{position:absolute;inset-inline-start:14px;top:50%;translate:0 -50%;width:18px;height:18px;color:var(--mut)}
+.sbox input{width:100%;padding:11px 70px 11px 40px;border:1px solid var(--bd);border-radius:12px;background:var(--bg2);color:var(--fg);font:inherit;font-size:.95rem;outline:0}
+[dir=rtl] .sbox input{padding:11px 40px 11px 70px}
+.sbox input:focus{border-color:var(--acc);background:var(--card);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 20%,transparent)}
+.kbd{position:absolute;inset-inline-end:10px;top:50%;translate:0 -50%;font-size:.72rem;color:var(--mut);border:1px solid var(--bd);border-radius:6px;padding:1px 7px;background:var(--card);pointer-events:none}
+.acts{display:flex;align-items:center;gap:6px;margin-inline-start:auto}
+.ib{border:0;background:none;color:var(--fg);padding:8px 12px;border-radius:10px;cursor:pointer;font-size:.92rem;font-weight:500;display:flex;gap:6px;align-items:center;text-decoration:none!important}
+.ib:hover{background:var(--bg2)}
+.btn{background:var(--acc);color:var(--accfg)!important;border:0;border-radius:10px;padding:9px 18px;font-weight:600;font-size:.92rem;cursor:pointer;text-decoration:none!important;white-space:nowrap}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.tabs a{padding:10px 14px;color:var(--mut);font-weight:600;font-size:.95rem;border-bottom:2.5px solid transparent;white-space:nowrap;text-decoration:none!important}
+.tabs a:hover{color:var(--fg)}.tabs a.on{color:var(--acc);border-color:var(--acc)}
+/* sections */
+main.wrap{padding:28px 24px 20px;min-height:70vh}
+.hero{background:var(--soft);border:1px solid var(--bd);border-radius:18px;padding:30px 28px;margin-bottom:30px}
+.hero h1{margin:0 0 8px;font-size:clamp(1.6rem,3.4vw,2.3rem);line-height:1.2;letter-spacing:-.01em}
+.hero p{margin:0;color:var(--mut);max-width:640px}
+.sec{display:flex;justify-content:space-between;align-items:baseline;margin:30px 0 14px}
+.sec h2{margin:0;font-size:1.25rem}.sec span{color:var(--mut);font-size:.85rem}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.cat{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--fg)!important;font-weight:600;text-decoration:none!important;box-shadow:var(--sh);transition:.15s}
+.cat:hover{border-color:var(--acc);transform:translateY(-1px)}
+.cat b{font-size:1.4rem;width:38px;height:38px;display:grid;place-items:center;background:var(--bg2);border-radius:10px;font-weight:400}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.card{display:flex;flex-direction:column;gap:12px;padding:20px;border:1px solid var(--bd);border-radius:14px;background:var(--card);color:var(--fg)!important;text-decoration:none!important;box-shadow:var(--sh);transition:.15s;min-height:190px}
+.card:hover{border-color:var(--acc);box-shadow:0 6px 22px #0f172a14;transform:translateY(-2px)}
+.ch{display:flex;gap:14px;align-items:center}
+.av{flex:none;width:54px;height:54px;border-radius:11px;display:grid;place-items:center;color:#fff;font-weight:800;font-size:1.3rem;overflow:hidden;position:relative}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff;opacity:0;transition:opacity .2s}
+.ct{min-width:0}.ct h3{margin:0;font-size:1.05rem;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct .by{color:var(--mut);font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card p{margin:0;color:var(--mut);font-size:.95rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;flex:1}
+.cf{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--mut);font-size:.85rem;margin-top:auto}
+.stars{display:flex;align-items:center;gap:4px;color:var(--fg);font-weight:600;min-width:34px}
+.stars svg{width:16px;height:16px;color:var(--star)}
+.tag{font-size:.74rem;padding:2px 10px;border-radius:99px;background:var(--bg2);color:var(--mut);font-weight:600;border:1px solid var(--bd);white-space:nowrap}
+.tag.remote{color:var(--ok)}
 .tags{display:flex;gap:6px;flex-wrap:wrap}
-.tag{font-size:.72rem;padding:2px 9px;border-radius:99px;background:var(--card2);color:var(--mut);font-weight:600}
-.tag.remote{color:var(--ok)}.tag.npm{color:#f87171}.tag.pypi{color:#60a5fa}.tag.oci{color:#38bdf8}
-.more{display:block;margin:26px auto;padding:12px 30px;border-radius:99px;border:1px solid var(--bd);background:var(--card);color:var(--fg);font:inherit;font-weight:600;cursor:pointer}
-.more:hover{border-color:var(--acc)}
-.state{text-align:center;color:var(--mut);padding:50px 0}
-.skel{height:150px;border-radius:var(--r);background:linear-gradient(90deg,var(--card),var(--card2),var(--card));background-size:200% 100%;animation:sh 1.2s infinite}
+/* toolbar */
+.tb{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.chip{border:1px solid var(--bd);background:var(--card);padding:7px 15px;border-radius:99px;font-size:.88rem;cursor:pointer;font-weight:500}
+.chip.on{background:var(--acc);border-color:var(--acc);color:var(--accfg)}
+select{border:1px solid var(--bd);background:var(--card);color:var(--fg);padding:8px 12px;border-radius:10px;font:inherit;font-size:.88rem}
+.meta{color:var(--mut);font-size:.88rem;margin:0 0 14px}
+.more{display:block;margin:30px auto 10px;padding:12px 34px;border-radius:12px;border:1px solid var(--bd);background:var(--card);font-weight:600;cursor:pointer}
+.more:hover{border-color:var(--acc);color:var(--acc)}
+.state{text-align:center;color:var(--mut);padding:60px 0}
+.skel{height:190px;border-radius:14px;background:linear-gradient(90deg,var(--bg2),var(--card),var(--bg2));background-size:200% 100%;animation:sh 1.2s infinite;border:1px solid var(--bd)}
 @keyframes sh{to{background-position:-200% 0}}
-dialog{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:18px;padding:0;width:min(720px,94vw);max-height:90vh}
-dialog::backdrop{background:#000a}
-.dh{padding:20px 22px 12px;border-bottom:1px solid var(--bd);position:relative}
-.dh h2{margin:0 36px 2px 0;font-size:1.25rem}.dh .ns{color:var(--mut);font-size:.8rem;word-break:break-all}
-.x{position:absolute;top:14px;right:14px;border:0;background:var(--card2);color:var(--fg);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.1rem}
-.db{padding:16px 22px 22px;overflow:auto;max-height:calc(90vh - 100px)}
-.db p{margin:0 0 14px}
-.links{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;font-size:.88rem}
-.tabs{display:flex;gap:6px;margin:6px 0 10px;flex-wrap:wrap}
-.tab{border:0;background:var(--card2);color:var(--mut);padding:6px 14px;border-radius:8px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer}
-.tab.on{background:var(--acc);color:#fff}
-.code{position:relative;background:#0a0c12;color:#d7dcf0;border:1px solid var(--bd);border-radius:10px;padding:14px;font:.8rem/1.55 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;margin:0;padding-right:72px}
-.copy{position:absolute;top:8px;right:8px;border:0;background:#ffffff1f;color:#fff;padding:4px 10px;border-radius:6px;font:inherit;font-size:.75rem;cursor:pointer}
-.codewrap{position:relative}
-.note{color:var(--mut);font-size:.8rem;margin:10px 0 0}
-.env{margin:12px 0 0;font-size:.85rem}.env code{background:var(--card2);padding:1px 6px;border-radius:5px}
-footer{color:var(--mut);font-size:.82rem;text-align:center;padding:40px 0 50px}
+/* detail */
+.back{display:inline-block;margin-bottom:16px;color:var(--mut);font-size:.92rem}
+.dh{display:flex;gap:20px;align-items:center;padding:24px;border:1px solid var(--bd);border-radius:16px;background:var(--card);box-shadow:var(--sh);flex-wrap:wrap}
+.dh .av{width:82px;height:82px;border-radius:16px;font-size:2rem}
+.dh .info{flex:1;min-width:240px}.dh h1{margin:0;font-size:1.7rem;line-height:1.2}
+.dh .by{color:var(--mut);margin:2px 0 10px;word-break:break-all}
+.dh .links{display:flex;gap:10px;flex-wrap:wrap}
+.btn2{border:1px solid var(--bd);background:var(--card);border-radius:10px;padding:9px 16px;font-weight:600;font-size:.9rem;color:var(--fg)!important;text-decoration:none!important}
+.btn2:hover{border-color:var(--acc)}
+.dg{display:grid;grid-template-columns:1fr 300px;gap:20px;margin-top:20px;align-items:start}
+@media(max-width:860px){.dg{grid-template-columns:1fr}.bar{flex-wrap:wrap}.sbox{order:3;flex-basis:100%;max-width:none}}
+.panel{border:1px solid var(--bd);border-radius:16px;background:var(--card);padding:22px;box-shadow:var(--sh)}
+.panel h2{margin:0 0 12px;font-size:1.1rem}
+.panel + .panel{margin-top:20px}
+.itabs{display:flex;gap:6px;margin:0 0 12px;flex-wrap:wrap}
+.itab{border:1px solid var(--bd);background:var(--bg2);padding:6px 14px;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer}
+.itab.on{background:var(--acc);color:var(--accfg);border-color:var(--acc)}
+.cw{position:relative;margin-bottom:10px}
+.code{background:var(--code);color:var(--codefg);border-radius:10px;padding:14px 74px 14px 14px;font:.82rem/1.6 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;margin:0;direction:ltr;text-align:left}
+.copy{position:absolute;top:8px;right:8px;left:auto;border:0;background:#ffffff22;color:#fff;padding:4px 11px;border-radius:6px;font-size:.76rem;cursor:pointer}
+.note{color:var(--mut);font-size:.85rem;margin:8px 0}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0;font-size:.9rem}
+.dl dt{color:var(--mut)}.dl dd{margin:0;word-break:break-word}
+.rel{display:grid;gap:10px}
+.rel a{min-width:0;display:flex;gap:10px;align-items:center;color:var(--fg)!important;text-decoration:none!important;padding:6px;border-radius:10px}
+.rel a:hover{background:var(--bg2)}
+.rel .av{width:36px;height:36px;font-size:1rem;border-radius:8px}
+.rel span{min-width:0;font-size:.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.env{font-size:.88rem;margin:10px 0}.env code{background:var(--bg2);padding:1px 6px;border-radius:5px;direction:ltr;display:inline-block}
+footer{border-top:1px solid var(--bd);color:var(--mut);font-size:.85rem;text-align:center;padding:30px 20px 40px}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <nav>
-    <div class="logo"><i>⬡</i> MCP Hub</div>
-    <div><a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">What is MCP?</a><a href="https://registry.modelcontextprotocol.io" target="_blank" rel="noopener">Registry</a></div>
-  </nav>
-
-  <header class="hero">
-    <h1>Discover <span>MCP servers</span><br>for your AI apps</h1>
-    <p>Search the official Model Context Protocol registry and get a ready-to-paste setup for Claude, Cursor and VS Code.</p>
-    <div class="search">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input id="q" type="search" placeholder="Search servers: github, postgres, browser, slack..." autocomplete="off">
+<header class="top">
+  <div class="wrap">
+    <div class="bar">
+      <a class="logo" href="#/"><i>⬡</i> MCP Hub</a>
+      <div class="sbox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="q" type="search" autocomplete="off">
+        <span class="kbd" id="kbd">Ctrl K</span>
+      </div>
+      <div class="acts">
+        <a class="ib" id="docs" href="https://modelcontextprotocol.io" target="_blank" rel="noopener"></a>
+        <button class="ib" id="lang" title="Language">EN / ع</button>
+        <button class="ib" id="theme" title="Theme" style="font-size:1.1rem"></button>
+        <a class="btn" id="submit" href="https://github.com/modelcontextprotocol/registry" target="_blank" rel="noopener"></a>
+      </div>
     </div>
-    <div class="chips" id="chips"></div>
-  </header>
+    <nav class="tabs" id="tabs"></nav>
+  </div>
+</header>
 
-  <div class="meta"><span id="count"></span><span>Live from registry.modelcontextprotocol.io</span></div>
-  <main class="grid" id="grid"></main>
-  <div id="state"></div>
-  <button class="more" id="more" hidden>Load more</button>
-  <footer>Data from the official MCP Registry. Always review a server and its permissions before you connect it.</footer>
-</div>
-
-<dialog id="dlg"><div class="dh"><h2 id="dt"></h2><div class="ns" id="dn"></div><button class="x" id="dx" aria-label="Close">×</button></div><div class="db" id="dbody"></div></dialog>
+<main class="wrap" id="app"></main>
+<footer id="foot"></footer>
 
 <script>
-const API = 'https://registry.modelcontextprotocol.io/v0/servers';
+/* ================= i18n ================= */
+const I = {
+en:{dir:'ltr',search:'Search MCP servers, tools, integrations...',docs:'Docs',submit:'Submit',
+ tDiscover:'Discover',tServers:'Servers',tRemote:'Remote Servers',tCats:'Categories',
+ heroT:'Find the right MCP server for your AI app',heroP:'Browse servers from the official Model Context Protocol registry and copy a ready-made setup for Claude, Cursor and VS Code.',
+ browse:'Browse by category',recent:'Recently updated',viewAll:'View all',more:'Load more',loading:'Loading...',none:'No servers found. Try another search or filter.',err:'Could not reach the registry. Check your connection and try again.',
+ added:'Added',today:'today',yday:'yesterday',dAgo:n=>`${n} days ago`,mAgo:n=>`${n} months ago`,yAgo:n=>`${n} years ago`,
+ fAll:'All',fRemote:'Remote',fNpm:'npm',fPy:'Python',fDocker:'Docker',sortAz:'Name (A-Z)',sortNew:'Recently updated',
+ allCats:'All categories',shown:n=>`${n} servers shown`,back:'← All servers',repo:'Repository',site:'Website',
+ about:'About',install:'Install',details:'Details',version:'Version',published:'Published',updated:'Updated',ns:'Namespace',pkgs:'Packages',remotes:'Remote endpoints',related:'Related servers',
+ cmdAlt:'Or add to your MCP config (Claude Desktop, Cursor, VS Code):',envVars:'Environment variables',req:'required',copy:'Copy',copied:'Copied ✓',
+ replace:'Replace placeholders in <angle brackets>. Review what a server can access before you enable it.',nosetup:'No automatic setup is published for this server. Open the repository for install instructions.',urlVars:'The URL contains variables you must fill in.',
+ foot:'Data from the official MCP Registry. Star counts come from GitHub and may be missing when the GitHub rate limit is reached. Always review a server and its permissions before you connect it.',notfound:'Server not found.',
+ stars:'GitHub stars',remote:'Remote'},
+ar:{dir:'rtl',search:'ابحث عن خوادم MCP وأدواتها...',docs:'التوثيق',submit:'أضف خادمك',
+ tDiscover:'استكشف',tServers:'الخوادم',tRemote:'الخوادم البعيدة',tCats:'التصنيفات',
+ heroT:'اعثر على خادم MCP المناسب لتطبيقك',heroP:'تصفّح الخوادم من سجل Model Context Protocol الرسمي، وانسخ إعدادًا جاهزًا لـ Claude وCursor وVS Code.',
+ browse:'تصفّح حسب التصنيف',recent:'المحدّثة مؤخرًا',viewAll:'عرض الكل',more:'عرض المزيد',loading:'جارٍ التحميل...',none:'لا توجد خوادم. جرّب بحثًا أو فلترًا آخر.',err:'تعذّر الوصول إلى السجل. تحقق من اتصالك وحاول مجددًا.',
+ added:'أُضيف',today:'اليوم',yday:'أمس',dAgo:n=>`منذ ${n} يوم`,mAgo:n=>`منذ ${n} شهر`,yAgo:n=>`منذ ${n} سنة`,
+ fAll:'الكل',fRemote:'بعيد',fNpm:'npm',fPy:'Python',fDocker:'Docker',sortAz:'الاسم (أ-ي)',sortNew:'الأحدث تحديثًا',
+ allCats:'كل التصنيفات',shown:n=>`${n} خادم معروض`,back:'→ كل الخوادم',repo:'المستودع',site:'الموقع',
+ about:'نبذة',install:'التثبيت',details:'التفاصيل',version:'الإصدار',published:'تاريخ النشر',updated:'آخر تحديث',ns:'النطاق',pkgs:'الحزم',remotes:'نقاط الاتصال البعيدة',related:'خوادم مشابهة',
+ cmdAlt:'أو أضِفه إلى إعدادات MCP (Claude Desktop أو Cursor أو VS Code):',envVars:'متغيرات البيئة',req:'مطلوب',copy:'نسخ',copied:'تم النسخ ✓',
+ replace:'استبدل القيم بين الأقواس <> ببياناتك. راجع صلاحيات الخادم قبل تفعيله.',nosetup:'لا يوجد إعداد تلقائي منشور لهذا الخادم. افتح المستودع لمعرفة طريقة التثبيت.',urlVars:'الرابط يحتوي متغيرات يجب ملؤها.',
+ foot:'البيانات من سجل MCP الرسمي. أعداد النجوم من GitHub وقد لا تظهر عند بلوغ حد الطلبات. راجع الخادم وصلاحياته دائمًا قبل ربطه.',notfound:'الخادم غير موجود.',
+ stars:'نجوم GitHub',remote:'بعيد'}
+};
+let L = localStorage.getItem('mcphub-lang') || 'en'; if(!I[L]) L='en';
+const t = k => I[L][k];
+const CATS = [
+ ['dev','🛠','Developer Tools','أدوات المطورين',['git','github','gitlab','code','coding','ide','lint','debug','test','testing','sdk','cli','repo','repository','pull request','commit','compiler','developer']],
+ ['data','🗄','Databases & Data','قواعد البيانات',['database','sql','postgres','postgresql','mysql','sqlite','mongodb','redis','supabase','snowflake','bigquery','vector','warehouse','analytics','etl','dataset','clickhouse','elasticsearch']],
+ ['ai','🤖','AI & Agents','الذكاء الاصطناعي',['agent','agents','llm','openai','anthropic','model','models','prompt','rag','embedding','inference','ai','gpt','claude','multi-agent']],
+ ['browser','🌐','Browser & Web','المتصفح والويب',['browser','scrape','scraping','crawl','crawler','web','playwright','puppeteer','selenium','fetch','html','website','automation']],
+ ['cloud','☁','Cloud & DevOps','السحابة وDevOps',['aws','azure','gcp','cloud','kubernetes','k8s','docker','terraform','devops','deploy','deployment','ci','cloudflare','vercel','infrastructure','serverless']],
+ ['memory','🧠','Memory & Knowledge','الذاكرة والمعرفة',['memory','knowledge','notes','obsidian','notion','wiki','graph','docs','documentation','second brain','context']],
+ ['prod','📅','Productivity','الإنتاجية',['calendar','email','gmail','task','tasks','todo','project management','jira','spreadsheet','drive','meeting','meetings','crm','productivity','schedule','workflow']],
+ ['comm','💬','Communication','التواصل',['slack','discord','telegram','whatsapp','sms','chat','message','messaging','twilio','teams','voice','call']],
+ ['fin','💰','Finance & Crypto','المال والعملات الرقمية',['finance','financial','stock','stocks','crypto','bitcoin','ethereum','blockchain','payment','payments','stripe','trading','defi','market','bank','invoice','accounting','wallet','solana']],
+ ['media','🎨','Media & Design','الوسائط والتصميم',['image','images','video','audio','music','design','figma','photo','speech','3d','canva','animation','creative','pdf']],
+ ['search','🔎','Search & Research','البحث والمعلومات',['search','research','news','academic','paper','papers','wikipedia','map','maps','location','weather','travel','data feed','lookup']],
+ ['sec','🔒','Security','الأمان',['security','vulnerability','auth','oauth','secret','secrets','scan','pentest','compliance','encryption','threat','malware']],
+ ['other','📦','Other','أخرى',[]]
+];
+const catById = Object.fromEntries(CATS.map(c => [c[0], c]));
+const catName = id => L==='ar' ? catById[id][3] : catById[id][2];
+const KW = CATS.map(c => [c[0], c[4].map(k => new RegExp('(^|[^a-z0-9])'+k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'([^a-z0-9]|$)'))]);
+function classify(s){
+  if(s._cat) return s._cat;
+  const text = ((s.name||'')+' '+(s.title||'')+' '+(s.description||'')).toLowerCase();
+  let best='other', score=0;
+  for(const [id,res] of KW){ let n=0; for(const r of res) if(r.test(text)) n++; if(n>score){score=n;best=id;} }
+  return s._cat = best;
+}
+
+/* ================= helpers ================= */
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let servers = [], cursor = null, query = '', filter = 'all', loading = false, seq = 0;
-
-const FILTERS = [['all','All'],['remote','Remote'],['npm','npm'],['pypi','Python'],['oci','Docker']];
-
-function kinds(s){
-  const k = new Set();
-  if((s.remotes||[]).length) k.add('remote');
-  for(const p of s.packages||[]){
-    const t = (p.registryType||'').toLowerCase();
-    if(t==='npm') k.add('npm'); else if(t==='pypi') k.add('pypi'); else if(t==='oci') k.add('oci'); else if(t) k.add(t);
-  }
-  return [...k];
-}
-const label = {remote:'Remote',npm:'npm',pypi:'Python',oci:'Docker'};
+const safeUrl = u => /^https?:\/\//i.test(u||'') ? u : '';
+const API = 'https://registry.modelcontextprotocol.io/v0/servers';
+const byName = new Map();           // name -> server (with _meta merged)
+function remember(x){ const s = x.server; s._meta = (x._meta||{})['io.modelcontextprotocol.registry/official']||{}; byName.set(s.name, s); return s; }
 const shortName = s => s.title || s.name.split('/').pop();
 const slug = s => s.name.split('/').pop().replace(/[^a-zA-Z0-9_-]/g,'-').toLowerCase();
-
-function renderChips(){
-  $('chips').innerHTML = FILTERS.map(([k,l]) => `<button class="chip ${k===filter?'on':''}" data-f="${k}">${l}</button>`).join('');
+const ghRepo = s => { const m = /^https?:\/\/github\.com\/([^\/]+)\/([^\/#?]+)/i.exec((s.repository||{}).url||''); return m ? [m[1], m[2].replace(/\.git$/,'')] : null; };
+const author = s => { const g = ghRepo(s); return g ? g[0] : s.name.split('/')[0]; };
+const kinds = s => { const k = new Set(); if((s.remotes||[]).length) k.add('remote'); for(const p of s.packages||[]){ const r=(p.registryType||'').toLowerCase(); if(r) k.add(r); } return [...k]; };
+const kindLabel = k => ({remote:t('fRemote'),npm:'npm',pypi:'Python',oci:'Docker'})[k] || k;
+function hue(str){ let h=0; for(const c of str) h=(h*31+c.charCodeAt(0))%360; return h; }
+function avatar(s, cls=''){
+  const letter = esc((shortName(s)[0]||'?').toUpperCase());
+  const bg = `linear-gradient(135deg,hsl(${hue(s.name)} 70% 52%),hsl(${(hue(s.name)+40)%360} 70% 42%))`;
+  const icon = safeUrl(((s.icons||[])[0]||{}).src);
+  const g = ghRepo(s);
+  const src = icon || (g ? `https://github.com/${encodeURIComponent(g[0])}.png?size=120` : '');
+  return `<div class="av ${cls}" style="background:${bg}">${letter}${src ? `<img src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onload="this.style.opacity=1" onerror="this.remove()">` : ''}</div>`;
 }
-function visible(){ return filter==='all' ? servers : servers.filter(s => kinds(s).includes(filter)); }
+function ago(iso){
+  if(!iso) return '';
+  const d = Math.floor((Date.now()-new Date(iso))/864e5);
+  const x = d<1 ? t('today') : d===1 ? t('yday') : d<30 ? t('dAgo')(d) : d<365 ? t('mAgo')(Math.floor(d/30)) : t('yAgo')(Math.floor(d/365));
+  return L==='ar' ? `${t('added')} ${x}` : `${t('added')} ${x}`;
+}
+const fmtDate = iso => iso ? new Date(iso).toLocaleDateString(L==='ar'?'ar':'en',{year:'numeric',month:'short',day:'numeric'}) : '-';
+const STAR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>';
+const fmtStars = n => n>=1000 ? (n/1000).toFixed(n>=10000?0:1).replace(/\.0$/,'')+'K' : String(n);
 
-function renderGrid(){
-  const list = visible();
-  $('grid').innerHTML = list.map(s => {
-    const idx = servers.indexOf(s);
-    return `<button class="card" data-i="${idx}">
-      <h3>${esc(shortName(s))}</h3><div class="ns">${esc(s.name)}</div>
-      <p>${esc(s.description)}</p>
-      <div class="tags">${kinds(s).map(k => `<span class="tag ${k}">${esc(label[k]||k)}</span>`).join('')}<span class="tag">v${esc(s.version)}</span></div>
-    </button>`;
-  }).join('');
-  $('count').textContent = list.length ? `${list.length} server${list.length>1?'s':''} shown` : '';
-  $('state').innerHTML = (!list.length && !loading) ? '<div class="state">No servers found. Try another search or filter.</div>' : '';
-  $('more').hidden = !cursor || loading;
+/* ================= GitHub stars (lazy, cached, rate-limit aware) ================= */
+const SKEY='mcphub-stars-v1'; let starCache={}; try{ starCache = JSON.parse(localStorage.getItem(SKEY)||'{}'); }catch(e){}
+let ghBlockedUntil = 0, ghQueue = [], ghActive = 0;
+const saveStars = () => { try{ localStorage.setItem(SKEY, JSON.stringify(starCache)); }catch(e){} };
+function starsFor(s){ const g = ghRepo(s); if(!g) return null; const c = starCache[g.join('/')]; return c && Date.now()-c[1] < 864e5 ? c[0] : null; }
+function wantStars(el){
+  const g = el.dataset.repo; if(!g) return;
+  const cached = starCache[g]; if(cached && Date.now()-cached[1] < 864e5){ paintStars(g, cached[0]); return; }
+  if(Date.now() < ghBlockedUntil) return;
+  if(!ghQueue.includes(g)) ghQueue.push(g); pump();
+}
+async function pump(){
+  while(ghActive < 3 && ghQueue.length && Date.now() >= ghBlockedUntil){
+    const g = ghQueue.shift(); ghActive++;
+    fetch('https://api.github.com/repos/'+g, {headers:{Accept:'application/vnd.github+json'}})
+      .then(async r => {
+        if(r.status===403 || r.status===429){ ghBlockedUntil = Date.now()+36e5; ghQueue = []; return; }
+        if(!r.ok) return;
+        const d = await r.json(); starCache[g] = [d.stargazers_count, Date.now()]; saveStars(); paintStars(g, d.stargazers_count);
+      }).catch(()=>{}).finally(()=>{ ghActive--; pump(); });
+  }
+}
+function paintStars(g, n){ document.querySelectorAll('[data-star="'+CSS.escape(g)+'"]').forEach(e => { e.innerHTML = STAR+fmtStars(n); }); }
+const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ io.unobserve(e.target); wantStars(e.target); } }), {rootMargin:'200px'}) : null;
+function observeStars(root){ root.querySelectorAll('[data-repo]').forEach(el => io ? io.observe(el) : wantStars(el)); }
+
+/* ================= rendering ================= */
+function cardHTML(s){
+  const g = ghRepo(s), key = g ? g.join('/') : '', st = starsFor(s);
+  return `<a class="card" href="#/server/${encodeURIComponent(s.name)}">
+    <div class="ch">${avatar(s)}<div class="ct"><h3>${esc(shortName(s))}</h3><div class="by">${esc(author(s))}</div></div></div>
+    <p dir="auto">${esc(s.description)}</p>
+    <div class="cf"><span class="stars" ${g?`data-repo="${esc(key)}" data-star="${esc(key)}"`:''}>${st!=null?STAR+fmtStars(st):''}</span>
+      <span>${esc(ago(s._meta.publishedAt))}</span></div></a>`;
+}
+function skeletons(n=6){ return `<div class="grid">${'<div class="skel"></div>'.repeat(n)}</div>`; }
+
+async function fetchPage({q,cursor,since,limit=100}){
+  const u = new URL(API); u.searchParams.set('limit',limit); u.searchParams.set('version','latest');
+  if(q) u.searchParams.set('search',q); if(cursor) u.searchParams.set('cursor',cursor); if(since) u.searchParams.set('updated_since',since);
+  const r = await fetch(u); if(!r.ok) throw new Error('HTTP '+r.status);
+  const d = await r.json(); return {items:(d.servers||[]).map(remember), next:(d.metadata||{}).nextCursor||null};
+}
+const daysAgoISO = n => new Date(Date.now()-n*864e5).toISOString();
+
+/* ---- routing ---- */
+let route = {}, token = 0;
+function parseHash(){
+  const h = location.hash.replace(/^#/,'') || '/';
+  const [path, qs] = h.split('?'); const p = new URLSearchParams(qs||'');
+  const seg = path.split('/').filter(Boolean);
+  if(!seg.length) return {v:'home'};
+  if(seg[0]==='server') return {v:'server', name:decodeURIComponent(seg.slice(1).join('/'))};
+  if(seg[0]==='categories') return {v:'cats'};
+  if(seg[0]==='remote') return {v:'list', q:p.get('q')||'', cat:p.get('cat')||'', f:'remote', sort:p.get('sort')||'az', tab:'remote'};
+  if(seg[0]==='servers') return {v:'list', q:p.get('q')||'', cat:p.get('cat')||'', f:p.get('f')||'all', sort:p.get('sort')||'az', tab:'servers'};
+  return {v:'home'};
+}
+function setTabs(active){
+  $('tabs').innerHTML = [['home',t('tDiscover'),'#/'],['servers',t('tServers'),'#/servers'],['remote',t('tRemote'),'#/remote'],['cats',t('tCats'),'#/categories']]
+    .map(([k,l,h]) => `<a href="${h}" class="${k===active?'on':''}">${l}</a>`).join('');
+}
+function listURL(r, patch){
+  const n = {...r, ...patch}; const p = new URLSearchParams();
+  if(n.q) p.set('q',n.q); if(n.cat) p.set('cat',n.cat); if(n.sort && n.sort!=='az') p.set('sort',n.sort);
+  if(n.f && n.f!=='all' && n.f!=='remote') p.set('f',n.f);
+  const base = n.f==='remote' && !patch.f ? '#/remote' : '#/servers'; const s = p.toString();
+  return base + (s ? '?'+s : '');
 }
 
-async function load(reset){
-  if(loading) return;
-  const my = ++seq; loading = true;
-  if(reset){ servers = []; cursor = null; $('grid').innerHTML = Array(6).fill('<div class="skel"></div>').join(''); $('state').innerHTML=''; }
-  $('more').hidden = true; $('more').textContent = 'Loading...';
+async function render(){
+  route = parseHash(); const my = ++token;
+  document.documentElement.lang = L; document.documentElement.dir = t('dir');
+  $('q').placeholder = t('search'); $('docs').textContent = t('docs'); $('submit').textContent = t('submit'); $('foot').textContent = t('foot');
+  if(route.v!=='list' || document.activeElement!==$('q')) $('q').value = route.v==='list' ? route.q : $('q').value;
+  window.scrollTo(0,0);
+  if(route.v==='home') return home(my);
+  if(route.v==='cats'){ setTabs('cats'); return cats(); }
+  if(route.v==='list'){ setTabs(route.tab); return list(my); }
+  if(route.v==='server'){ setTabs(''); return detail(my); }
+}
+
+/* ---- home ---- */
+async function home(my){
+  setTabs('home'); document.title = 'MCP Hub - Discover MCP servers';
+  $('app').innerHTML = `<section class="hero"><h1>${esc(t('heroT'))}</h1><p>${esc(t('heroP'))}</p></section>
+    <div class="sec"><h2>${esc(t('browse'))}</h2><a href="#/categories">${esc(t('viewAll'))}</a></div>
+    <div class="cats">${CATS.filter(c=>c[0]!=='other').map(c=>`<a class="cat" href="#/servers?cat=${c[0]}"><b>${c[1]}</b>${esc(catName(c[0]))}</a>`).join('')}</div>
+    <div class="sec"><h2>${esc(t('recent'))}</h2><a href="#/servers?sort=new">${esc(t('viewAll'))}</a></div>
+    <div id="rec">${skeletons(6)}</div>`;
   try{
-    const u = new URL(API); u.searchParams.set('limit','30'); u.searchParams.set('version','latest');
-    if(query) u.searchParams.set('search', query);
-    if(cursor) u.searchParams.set('cursor', cursor);
-    const r = await fetch(u); if(!r.ok) throw new Error('HTTP '+r.status);
-    const d = await r.json(); if(my!==seq) return;
-    const seen = new Set(servers.map(s => s.name));
-    for(const x of d.servers||[]){ if(!seen.has(x.server.name)){ seen.add(x.server.name); servers.push(x.server); } }
-    cursor = d.metadata && d.metadata.nextCursor || null;
-    loading = false; renderGrid();
-    // if filter hides everything but more pages exist, keep loading
-    if(!visible().length && cursor && filter!=='all') load(false);
-  }catch(e){
-    if(my!==seq) return;
-    loading = false; $('grid').innerHTML = '';
-    $('state').innerHTML = '<div class="state">Could not reach the registry. Check your connection and try again.</div>';
-  }finally{ loading = false; $('more').textContent = 'Load more'; if(my===seq) $('more').hidden = !cursor; }
+    const {items} = await fetchPage({since:daysAgoISO(14), limit:100}); if(my!==token) return;
+    items.sort((a,b)=> new Date(b._meta.updatedAt)-new Date(a._meta.updatedAt));
+    $('rec').innerHTML = `<div class="grid">${items.slice(0,12).map(cardHTML).join('')}</div>`; observeStars($('rec'));
+  }catch(e){ if(my===token) $('rec').innerHTML = `<div class="state">${esc(t('err'))}</div>`; }
 }
 
-/* ---- setup snippets ---- */
+/* ---- categories ---- */
+function cats(){
+  document.title = t('tCats')+' - MCP Hub';
+  $('app').innerHTML = `<div class="sec"><h2>${esc(t('tCats'))}</h2></div><div class="cats">${CATS.map(c=>`<a class="cat" href="#/servers?cat=${c[0]}"><b>${c[1]}</b>${esc(catName(c[0]))}</a>`).join('')}</div>`;
+}
+
+/* ---- list ---- */
+let ls = null; // list state
+async function list(my){
+  const r = route; document.title = (r.tab==='remote'?t('tRemote'):t('tServers'))+' - MCP Hub';
+  const key = JSON.stringify([r.q,r.sort]);
+  if(!ls || ls.key!==key){ ls = {key, items:[], cursor:null, loading:false, done:false, auto:0, my}; }
+  const F = [['all',t('fAll')],['remote',t('fRemote')],['npm','npm'],['pypi',t('fPy')],['oci',t('fDocker')]];
+  $('app').innerHTML = `<div class="tb">
+      ${F.map(([k,l])=>`<a class="chip ${k===r.f?'on':''}" href="${k==='remote'?'#/remote'+(r.q||r.cat?'?'+new URLSearchParams({...(r.q?{q:r.q}:{}),...(r.cat?{cat:r.cat}:{})}):''):listURL(r,{f:k})}" style="text-decoration:none;color:inherit">${l}</a>`).join('')}
+      <select id="selcat"><option value="">${esc(t('allCats'))}</option>${CATS.map(c=>`<option value="${c[0]}" ${c[0]===r.cat?'selected':''}>${c[1]} ${esc(catName(c[0]))}</option>`).join('')}</select>
+      <select id="selsort"><option value="az" ${r.sort==='az'?'selected':''}>${esc(t('sortAz'))}</option><option value="new" ${r.sort==='new'?'selected':''}>${esc(t('sortNew'))}</option></select>
+    </div><p class="meta" id="meta"></p><div id="res"></div><div id="st"></div><button class="more" id="more" hidden>${esc(t('more'))}</button>`;
+  $('selcat').onchange = e => location.hash = listURL(r,{cat:e.target.value});
+  $('selsort').onchange = e => location.hash = listURL(r,{sort:e.target.value});
+  $('more').onclick = () => { ls.auto = -99; loadMore(); };
+  draw(); if(!ls.items.length && !ls.done) loadMore();
+}
+function filtered(){
+  let a = ls.items; const r = route;
+  if(r.f && r.f!=='all') a = a.filter(s => kinds(s).includes(r.f));
+  if(r.cat) a = a.filter(s => classify(s)===r.cat);
+  if(r.sort==='new') a = [...a].sort((x,y)=> new Date(y._meta.updatedAt)-new Date(x._meta.updatedAt));
+  return a;
+}
+function draw(){
+  if(route.v!=='list' || !$('res')) return;
+  const a = filtered();
+  $('res').innerHTML = a.length ? `<div class="grid">${a.map(cardHTML).join('')}</div>` : (ls.loading ? skeletons(6) : '');
+  $('meta').textContent = a.length ? t('shown')(a.length) : '';
+  $('st').innerHTML = (!a.length && !ls.loading) ? `<div class="state">${esc(t('none'))}</div>` : '';
+  $('more').hidden = !ls.cursor || ls.loading; $('more').textContent = t('more');
+  observeStars($('res'));
+}
+async function loadMore(){
+  if(ls.loading || ls.done) return; ls.loading = true; const mine = ls, my = token;
+  if(route.v==='list') draw();
+  try{
+    const since = route.sort==='new' ? daysAgoISO(30) : undefined;
+    const {items,next} = await fetchPage({q:route.q, cursor:ls.cursor, since});
+    if(mine!==ls) return;
+    const seen = new Set(ls.items.map(s=>s.name)); items.forEach(s=>{ if(!seen.has(s.name)) ls.items.push(s); });
+    ls.cursor = next; if(!next) ls.done = true;
+  }catch(e){ if(mine===ls && route.v==='list' && $('st')){ ls.loading=false; $('st').innerHTML = `<div class="state">${esc(t('err'))}</div>`; return; } }
+  ls.loading = false;
+  if(route.v!=='list') return;
+  draw();
+  // auto-load more pages while a category/type filter leaves too few results
+  if(ls.cursor && !ls.done && ls.auto>=0 && ls.auto<8 && filtered().length < 24 && (route.cat || (route.f!=='all'))){ ls.auto++; loadMore(); }
+}
+
+/* ---- detail ---- */
 function configs(s){
   const name = slug(s), out = [];
-  const envObj = arr => Object.fromEntries((arr||[]).map(e => [e.name, e.isRequired ? '<your-'+e.name.toLowerCase().replace(/_/g,'-')+'>' : '']).filter(([k,v]) => v));
+  const envObj = arr => Object.fromEntries((arr||[]).filter(e=>e.isRequired).map(e => [e.name,'<your-'+e.name.toLowerCase().replace(/_/g,'-')+'>']));
   for(const r of s.remotes||[]){
     const type = r.type==='sse' ? 'sse' : 'http';
     const headers = Object.fromEntries((r.headers||[]).filter(h=>h.isRequired).map(h => [h.name,'<value>']));
     const entry = {type, url:r.url}; if(Object.keys(headers).length) entry.headers = headers;
-    out.push({title:'Remote ('+type+')', cli:`claude mcp add --transport ${type} ${name} ${r.url}`, json:{mcpServers:{[name]:entry}}, env:[], note: r.url.includes('{')?'The URL contains variables you must fill in.':''});
+    out.push({title:'Remote ('+type+')', cli:`claude mcp add --transport ${type} ${name} ${r.url}`, json:{mcpServers:{[name]:entry}}, env:[], note:(r.url||'').includes('{')?t('urlVars'):''});
   }
   for(const p of s.packages||[]){
-    const t = (p.registryType||'').toLowerCase(); let cmd, args;
-    if(t==='npm'){ cmd='npx'; args=['-y', p.identifier + (p.version?'@'+p.version:'')]; }
-    else if(t==='pypi'){ cmd='uvx'; args=[p.identifier + (p.version?'=='+p.version:'')]; }
-    else if(t==='oci'){ cmd='docker'; args=['run','-i','--rm', p.identifier]; }
+    const k = (p.registryType||'').toLowerCase(); let cmd,args;
+    if(k==='npm'){ cmd='npx'; args=['-y', p.identifier+(p.version?'@'+p.version:'')]; }
+    else if(k==='pypi'){ cmd='uvx'; args=[p.identifier+(p.version?'=='+p.version:'')]; }
+    else if(k==='oci'){ cmd='docker'; args=['run','-i','--rm',p.identifier]; }
     else continue;
-    const env = envObj(p.environmentVariables);
-    const entry = {command:cmd, args}; if(Object.keys(env).length) entry.env = env;
-    const envFlags = Object.keys(env).map(k=>`-e ${k}=${env[k]} `).join('');
-    out.push({title:({npm:'npm',pypi:'Python (uvx)',oci:'Docker'})[t], cli:`claude mcp add ${envFlags}${name} -- ${cmd} ${args.join(' ')}`, json:{mcpServers:{[name]:entry}}, env:p.environmentVariables||[], note:''});
+    const env = envObj(p.environmentVariables); const entry = {command:cmd,args}; if(Object.keys(env).length) entry.env = env;
+    const flags = Object.keys(env).map(x=>`-e ${x}=${env[x]} `).join('');
+    out.push({title:({npm:'npm',pypi:'Python (uvx)',oci:'Docker'})[k], cli:`claude mcp add ${flags}${name} -- ${cmd} ${args.join(' ')}`, json:{mcpServers:{[name]:entry}}, env:p.environmentVariables||[], note:''});
   }
   return out;
 }
-
-function openDetail(s){
-  $('dt').textContent = shortName(s); $('dn').textContent = s.name;
-  const repo = s.repository && s.repository.url, site = s.websiteUrl;
-  const cfg = configs(s);
-  $('dbody').innerHTML = `<p>${esc(s.description)}</p>
-    <div class="links">${repo?`<a href="${esc(repo)}" target="_blank" rel="noopener noreferrer">Repository ↗</a>`:''}${site?`<a href="${esc(site)}" target="_blank" rel="noopener noreferrer">Website ↗</a>`:''}<span class="tag">v${esc(s.version)}</span></div>
-    ${cfg.length ? `<div class="tabs" id="tabs">${cfg.map((c,i)=>`<button class="tab ${i?'':'on'}" data-t="${i}">${esc(c.title)}</button>`).join('')}</div><div id="cfg"></div>
-      <p class="note">Replace placeholders in &lt;angle brackets&gt;. Review what a server can access before you enable it.</p>`
-      : '<p class="note">No automatic setup is published for this server. Open the repository for install instructions.</p>'}`;
-  const show = i => {
-    const c = cfg[i];
-    $('cfg').innerHTML = `<div class="codewrap"><pre class="code" id="c1">${esc(c.cli)}</pre><button class="copy" data-c="c1">Copy</button></div>
-      <div class="note" style="margin:12px 0 6px">Or add to your MCP config (Claude Desktop, Cursor, VS Code):</div>
-      <div class="codewrap"><pre class="code" id="c2">${esc(JSON.stringify(c.json,null,2))}</pre><button class="copy" data-c="c2">Copy</button></div>
-      ${c.env.length?`<div class="env"><b>Environment variables:</b><br>${c.env.map(e=>`<code>${esc(e.name)}</code>${e.isRequired?' (required)':''}${e.description?' - '+esc(e.description):''}`).join('<br>')}</div>`:''}
-      ${c.note?`<p class="note">${esc(c.note)}</p>`:''}`;
-  };
-  if(cfg.length){ show(0); $('tabs').onclick = e => { const b = e.target.closest('[data-t]'); if(!b) return; document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.toggle('on',t===b)); show(+b.dataset.t); }; }
-  $('dlg').showModal();
+async function detail(my){
+  $('app').innerHTML = skeletons(1);
+  let s = byName.get(route.name);
+  if(!s || !s._full){
+    try{
+      const r = await fetch(API+'/'+encodeURIComponent(route.name)+'/versions/latest'); if(my!==token) return;
+      if(!r.ok) throw new Error(r.status); s = remember(await r.json()); s._full = true;
+    }catch(e){ if(my===token) $('app').innerHTML = `<a class="back" href="#/servers">${esc(t('back'))}</a><div class="state">${esc(t('notfound'))}</div>`; return; }
+  }
+  document.title = shortName(s)+' - MCP Hub';
+  const g = ghRepo(s), key = g ? g.join('/') : '', st = starsFor(s), cat = classify(s);
+  const cfg = configs(s), repo = safeUrl((s.repository||{}).url), site = safeUrl(s.websiteUrl);
+  const rel = [...byName.values()].filter(x => x.name!==s.name && classify(x)===cat).slice(0,6);
+  $('app').innerHTML = `<a class="back" href="#/servers">${esc(t('back'))}</a>
+  <div class="dh">${avatar(s)}<div class="info"><h1>${esc(shortName(s))}</h1><div class="by">${esc(author(s))} · ${esc(s.name)}</div>
+    <div class="tags"><a class="tag" href="#/servers?cat=${cat}" style="text-decoration:none">${catById[cat][1]} ${esc(catName(cat))}</a>${kinds(s).map(k=>`<span class="tag ${k}">${esc(kindLabel(k))}</span>`).join('')}<span class="tag">v${esc(s.version)}</span></div></div>
+    <div class="links">${g?`<span class="stars" data-repo="${esc(key)}" data-star="${esc(key)}" title="${esc(t('stars'))}">${st!=null?STAR+fmtStars(st):''}</span>`:''}${repo?`<a class="btn2" href="${esc(repo)}" target="_blank" rel="noopener noreferrer">${esc(t('repo'))} ↗</a>`:''}${site?`<a class="btn2" href="${esc(site)}" target="_blank" rel="noopener noreferrer">${esc(t('site'))} ↗</a>`:''}</div></div>
+  <div class="dg"><div>
+    <div class="panel"><h2>${esc(t('about'))}</h2><p style="margin:0" dir="auto">${esc(s.description)}</p></div>
+    <div class="panel"><h2>${esc(t('install'))}</h2>${cfg.length?`<div class="itabs" id="itabs">${cfg.map((c,i)=>`<button class="itab ${i?'':'on'}" data-t="${i}">${esc(c.title)}</button>`).join('')}</div><div id="cfg"></div><p class="note">${esc(t('replace'))}</p>`:`<p class="note">${esc(t('nosetup'))}</p>`}</div>
+  </div><aside>
+    <div class="panel"><h2>${esc(t('details'))}</h2><dl class="dl">
+      <dt>${esc(t('version'))}</dt><dd>${esc(s.version)}</dd>
+      <dt>${esc(t('published'))}</dt><dd>${esc(fmtDate(s._meta.publishedAt))}</dd>
+      <dt>${esc(t('updated'))}</dt><dd>${esc(fmtDate(s._meta.updatedAt))}</dd>
+      <dt>${esc(t('ns'))}</dt><dd>${esc(s.name.split('/')[0])}</dd>
+      ${(s.packages||[]).length?`<dt>${esc(t('pkgs'))}</dt><dd>${s.packages.map(p=>esc((p.registryType||'')+': '+p.identifier)).join('<br>')}</dd>`:''}
+      ${(s.remotes||[]).length?`<dt>${esc(t('remotes'))}</dt><dd>${s.remotes.map(r=>esc(r.type+': '+r.url)).join('<br>')}</dd>`:''}
+    </dl></div>
+    ${rel.length?`<div class="panel"><h2>${esc(t('related'))}</h2><div class="rel">${rel.map(x=>`<a href="#/server/${encodeURIComponent(x.name)}">${avatar(x)}<span dir="auto">${esc(shortName(x))}</span></a>`).join('')}</div></div>`:''}
+  </aside></div>`;
+  observeStars($('app'));
+  const show = i => { const c = cfg[i];
+    $('cfg').innerHTML = `<div class="cw"><pre class="code" id="c1">${esc(c.cli)}</pre><button class="copy" data-c="c1">${esc(t('copy'))}</button></div>
+      <div class="note">${esc(t('cmdAlt'))}</div>
+      <div class="cw"><pre class="code" id="c2">${esc(JSON.stringify(c.json,null,2))}</pre><button class="copy" data-c="c2">${esc(t('copy'))}</button></div>
+      ${c.env.length?`<div class="env"><b>${esc(t('envVars'))}:</b><br>${c.env.map(e=>`<code>${esc(e.name)}</code>${e.isRequired?' ('+esc(t('req'))+')':''}${e.description?' - '+esc(e.description):''}`).join('<br>')}</div>`:''}
+      ${c.note?`<p class="note">${esc(c.note)}</p>`:''}`; };
+  if(cfg.length){ show(0); $('itabs').onclick = e => { const b = e.target.closest('[data-t]'); if(!b) return; document.querySelectorAll('#itabs .itab').forEach(x=>x.classList.toggle('on',x===b)); show(+b.dataset.t); }; }
 }
 
-/* ---- events ---- */
-let deb;
-$('q').addEventListener('input', e => { clearTimeout(deb); deb = setTimeout(() => { query = e.target.value.trim(); loading=false; load(true); }, 350); });
-$('chips').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if(!b) return; filter = b.dataset.f; renderChips(); renderGrid(); if(!visible().length && cursor) load(false); });
-$('grid').addEventListener('click', e => { const c = e.target.closest('[data-i]'); if(c) openDetail(servers[+c.dataset.i]); });
-$('more').addEventListener('click', () => load(false));
-$('dx').onclick = () => $('dlg').close();
-$('dlg').addEventListener('click', e => { if(e.target===$('dlg')) $('dlg').close(); });
-$('dlg').addEventListener('click', async e => {
+/* ================= global events ================= */
+document.addEventListener('click', async e => {
   const b = e.target.closest('[data-c]'); if(!b) return;
-  try{ await navigator.clipboard.writeText($(b.dataset.c).textContent); b.textContent='Copied ✓'; }catch(_){ b.textContent='Select & copy'; }
-  setTimeout(()=>b.textContent='Copy',1500);
+  try{ await navigator.clipboard.writeText($(b.dataset.c).textContent); b.textContent = t('copied'); }catch(_){ b.textContent = '...'; }
+  setTimeout(()=>b.textContent = t('copy'), 1500);
 });
-
-renderChips(); load(true);
+let deb; $('q').addEventListener('input', e => { clearTimeout(deb); deb = setTimeout(() => { const v = e.target.value.trim(); location.hash = '#/servers' + (v ? '?q='+encodeURIComponent(v) : ''); }, 400); });
+$('q').addEventListener('keydown', e => { if(e.key==='Enter'){ clearTimeout(deb); const v = e.target.value.trim(); location.hash = '#/servers' + (v ? '?q='+encodeURIComponent(v) : ''); } });
+document.addEventListener('keydown', e => { if((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); $('q').focus(); $('q').select(); } });
+$('kbd').textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘ K' : 'Ctrl K';
+$('lang').onclick = () => { L = L==='en' ? 'ar' : 'en'; try{ localStorage.setItem('mcphub-lang', L); }catch(e){} ls = null; render(); };
+function applyTheme(m){ document.documentElement.dataset.theme = m; $('theme').textContent = m==='dark' ? '☀️' : '🌙'; }
+(function(){ let m; try{ m = localStorage.getItem('mcphub-theme'); }catch(e){} applyTheme(m || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light')); })();
+$('theme').onclick = () => { const m = document.documentElement.dataset.theme==='dark' ? 'light' : 'dark'; applyTheme(m); try{ localStorage.setItem('mcphub-theme', m); }catch(e){} };
+addEventListener('hashchange', render);
+render();
 </script>
 </body>
 </html>
