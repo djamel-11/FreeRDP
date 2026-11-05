@@ -57,6 +57,8 @@ main.wrap{padding:28px 24px 20px;min-height:70vh}
 .stars svg{width:16px;height:16px;color:var(--star)}
 .tag{font-size:.74rem;padding:2px 10px;border-radius:99px;background:var(--bg2);color:var(--mut);font-weight:600;border:1px solid var(--bd);white-space:nowrap}
 .tag.remote{color:var(--ok)}
+.pick{margin-inline-start:auto;flex:none;align-self:flex-start;font-size:.7rem;font-weight:700;color:#b45309;background:#fef3c7;border-radius:99px;padding:2px 9px;white-space:nowrap}
+:root[data-theme=dark] .pick{background:#3b2f0f;color:#fbbf24}
 .tags{display:flex;gap:6px;flex-wrap:wrap}
 /* toolbar */
 .tb{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
@@ -140,14 +142,14 @@ en:{dir:'ltr',search:'Search MCP servers, tools, integrations...',docs:'Docs',su
  tDiscover:'Discover',tServers:'Servers',tRemote:'Remote Servers',tCats:'Categories',
  heroT:'Find the right MCP server for your AI app',heroP:'Browse servers from the official Model Context Protocol registry and copy a ready-made setup for Claude, Cursor and VS Code.',
  browse:'Browse by category',recent:'Recently updated',viewAll:'View all',more:'Load more',loading:'Loading...',none:'No servers found. Try another search or filter.',err:'Could not reach the registry. Check your connection and try again.',
- added:'Added',today:'today',yday:'yesterday',dAgo:n=>`${n} days ago`,mAgo:n=>`${n} months ago`,yAgo:n=>`${n} years ago`,
+ added:'Added',today:'today',yday:'yesterday',dAgo:n=>`${n} day${n>1?'s':''} ago`,mAgo:n=>`${n} month${n>1?'s':''} ago`,yAgo:n=>`${n} year${n>1?'s':''} ago`,
  fAll:'All',fRemote:'Remote',fNpm:'npm',fPy:'Python',fDocker:'Docker',sortAz:'Name (A-Z)',sortNew:'Recently updated',
  allCats:'All categories',shown:n=>`${n} servers shown`,back:'← All servers',repo:'Repository',site:'Website',
  about:'About',install:'Install',details:'Details',version:'Version',published:'Published',updated:'Updated',ns:'Namespace',pkgs:'Packages',remotes:'Remote endpoints',related:'Related servers',
  cmdAlt:'Or add to your MCP config (Claude Desktop, Cursor, VS Code):',envVars:'Environment variables',req:'required',copy:'Copy',copied:'Copied ✓',
  replace:'Replace placeholders in <angle brackets>. Review what a server can access before you enable it.',nosetup:'No automatic setup is published for this server. Open the repository for install instructions.',urlVars:'The URL contains variables you must fill in.',
  foot:'Data from the official MCP Registry. Star counts come from GitHub and may be missing when the GitHub rate limit is reached. Always review a server and its permissions before you connect it.',notfound:'Server not found.',
- stars:'GitHub stars',remote:'Remote',sortBest:'Best match',onlyRepo:'Has repository',noSource:'No source link',readme:'README',fullReadme:'Read the full README on GitHub ↗',readmeNote:'Shown from the project\'s README on GitHub.'},
+ stars:'GitHub stars',remote:'Remote',tFeatured:'Editor\'s picks',pick:'Editor\'s pick',featT:'Editor\'s picks',featP:'Servers published by the vendor\'s own GitHub organization, chosen by hand. The short note restates the registry description. Review a server and its permissions before you connect it.',sortBest:'Best match',onlyRepo:'Has repository',noSource:'No source link',readme:'README',fullReadme:'Read the full README on GitHub ↗',readmeNote:'Shown from the project\'s README on GitHub.'},
 ar:{dir:'rtl',search:'ابحث عن خوادم MCP وأدواتها...',docs:'التوثيق',submit:'أضف خادمك',
  tDiscover:'استكشف',tServers:'الخوادم',tRemote:'الخوادم البعيدة',tCats:'التصنيفات',
  heroT:'اعثر على خادم MCP المناسب لتطبيقك',heroP:'تصفّح الخوادم من سجل Model Context Protocol الرسمي، وانسخ إعدادًا جاهزًا لـ Claude وCursor وVS Code.',
@@ -159,7 +161,7 @@ ar:{dir:'rtl',search:'ابحث عن خوادم MCP وأدواتها...',docs:'ا
  cmdAlt:'أو أضِفه إلى إعدادات MCP (Claude Desktop أو Cursor أو VS Code):',envVars:'متغيرات البيئة',req:'مطلوب',copy:'نسخ',copied:'تم النسخ ✓',
  replace:'استبدل القيم بين الأقواس <> ببياناتك. راجع صلاحيات الخادم قبل تفعيله.',nosetup:'لا يوجد إعداد تلقائي منشور لهذا الخادم. افتح المستودع لمعرفة طريقة التثبيت.',urlVars:'الرابط يحتوي متغيرات يجب ملؤها.',
  foot:'البيانات من سجل MCP الرسمي. أعداد النجوم من GitHub وقد لا تظهر عند بلوغ حد الطلبات. راجع الخادم وصلاحياته دائمًا قبل ربطه.',notfound:'الخادم غير موجود.',
- stars:'نجوم GitHub',remote:'بعيد',sortBest:'الأفضل أولًا',onlyRepo:'له مستودع',noSource:'بدون رابط مصدر',readme:'ملف README',fullReadme:'اقرأ README كاملًا على GitHub ↗',readmeNote:'يُعرض من ملف README الخاص بالمشروع على GitHub.'}
+ stars:'نجوم GitHub',remote:'بعيد',tFeatured:'اختيارات المحرر',pick:'اختيار المحرر',featT:'اختيارات المحرر',featP:'خوادم تنشرها الشركة المطوّرة نفسها من مستودعها الرسمي على GitHub، اخترناها يدويًا. الشرح القصير مأخوذ من وصف السجل. راجع الخادم وصلاحياته قبل ربطه.',sortBest:'الأفضل أولًا',onlyRepo:'له مستودع',noSource:'بدون رابط مصدر',readme:'ملف README',fullReadme:'اقرأ README كاملًا على GitHub ↗',readmeNote:'يُعرض من ملف README الخاص بالمشروع على GitHub.'}
 };
 let L = localStorage.getItem('mcphub-lang') || 'en'; if(!I[L]) L='en';
 const t = k => I[L][k];
@@ -221,6 +223,49 @@ const fmtDate = iso => iso ? new Date(iso).toLocaleDateString(L==='ar'?'ar':'en'
 const STAR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>';
 const fmtStars = n => n>=1000 ? (n/1000).toFixed(n>=10000?0:1).replace(/\.0$/,'')+'K' : String(n);
 
+
+/* ================= editor's picks ================= */
+/* Selection rule: listed in the official registry AND the repository belongs to the vendor's own GitHub organization.
+   Blurbs only restate what the registry description says. */
+const FEATURED = [
+ {n:'io.github.github/github-mcp-server',c:'dev',en:'Official GitHub server: manage repositories, issues, pull requests and workflows from your AI assistant.',ar:'الخادم الرسمي من GitHub: إدارة المستودعات والمشكلات وطلبات الدمج وسير العمل من مساعدك الذكي.'},
+ {n:'io.github.microsoft/playwright-mcp',c:'browser',en:'Lets an assistant drive a real browser with Playwright, to test and automate web pages.',ar:'يتيح لمساعدك التحكم بمتصفح حقيقي عبر Playwright لاختبار صفحات الويب وأتمتتها.'},
+ {n:'io.github.upstash/context7',c:'dev',en:'Up-to-date library documentation for your assistant, instead of guessing from old training data.',ar:'وثائق المكتبات المحدّثة لمساعدك، بدل الاعتماد على معلومات تدريب قديمة.'},
+ {n:'io.github.firecrawl/firecrawl-mcp-server',c:'browser',en:'Search and scrape the web and get clean content back for your AI agent.',ar:'بحث وسحب محتوى الويب وإرجاعه نظيفًا لوكيلك الذكي.'},
+ {n:'io.github.ChromeDevTools/chrome-devtools-mcp',c:'dev',en:'Connects an assistant to Chrome DevTools to inspect and debug pages.',ar:'يربط المساعد بأدوات مطوري Chrome لفحص الصفحات وتصحيح أخطائها.'},
+ {n:'io.github.getsentry/sentry-mcp',c:'dev',en:'Error monitoring and issue tracking from Sentry, so an assistant can help investigate and debug.',ar:'مراقبة الأخطاء وتتبّع المشكلات من Sentry ليساعدك المساعد في التحقيق والتصحيح.'},
+ {n:'com.atlassian/atlassian-mcp-server',c:'prod',en:'Search, create and manage work across Jira, Confluence and Loom.',ar:'البحث وإنشاء وإدارة العمل عبر Jira وConfluence وLoom.'},
+ {n:'com.figma.mcp/mcp',c:'media',en:'Brings Figma design context directly into your AI workflow.',ar:'يجلب سياق تصاميم Figma مباشرة إلى عملك مع الذكاء الاصطناعي.'},
+ {n:'com.stripe/mcp',c:'fin',en:'Stripe tools for customers, products, payments and more, from your assistant.',ar:'أدوات Stripe للعملاء والمنتجات والمدفوعات وغيرها من داخل مساعدك.'},
+ {n:'com.zapier/mcp',c:'prod',en:'Hosted server that connects your assistant to thousands of apps and actions through Zapier.',ar:'خادم مستضاف يربط مساعدك بآلاف التطبيقات والإجراءات عبر Zapier.'},
+ {n:'com.cloudflare.mcp/mcp',c:'cloud',en:'The official Cloudflare MCP servers.',ar:'خوادم MCP الرسمية من Cloudflare.'},
+ {n:'com.vercel/vercel-mcp',c:'cloud',en:'MCP server for Vercel.',ar:'خادم MCP لمنصة Vercel.'},
+ {n:'io.github.hashicorp/terraform-mcp-server',c:'cloud',en:'Generate more accurate Terraform and automate HCP Terraform workflows.',ar:'إنشاء كود Terraform أدق وأتمتة سير عمل HCP Terraform.'},
+ {n:'com.microsoft/azure',c:'cloud',en:'Azure MCP tools that connect AI agents with Azure services.',ar:'أدوات Azure التي تربط الوكلاء الأذكياء بخدمات Azure.'},
+ {n:'io.github.grafana/mcp-grafana',c:'cloud',en:'Access Grafana dashboards and data from your assistant.',ar:'الوصول إلى لوحات Grafana وبياناتها من مساعدك.'},
+ {n:'io.github.mongodb-js/mongodb-mcp-server',c:'data',en:'Connect your assistant to MongoDB.',ar:'ربط مساعدك بقاعدة بيانات MongoDB.'},
+ {n:'com.neon/mcp',c:'data',en:'Manage Neon projects and Postgres databases.',ar:'إدارة مشاريع Neon وقواعد بيانات Postgres.'},
+ {n:'io.github.Snowflake-Labs/mcp',c:'data',en:'MCP server for Snowflake, from Snowflake Labs.',ar:'خادم MCP لـSnowflake من Snowflake Labs.'},
+ {n:'io.github.ClickHouse/mcp-clickhouse',c:'data',en:'Query and explore ClickHouse clusters.',ar:'الاستعلام عن عناقيد ClickHouse واستكشافها.'},
+ {n:'ai.exa/exa',c:'search',en:'Web search, content fetching and multi-step research for AI agents.',ar:'بحث ويب وجلب للمحتوى وبحث متعدد الخطوات للوكلاء الأذكياء.'},
+ {n:'io.github.tavily-ai/tavily-mcp',c:'search',en:'Advanced web search for AI assistants.',ar:'بحث ويب متقدم لمساعدي الذكاء الاصطناعي.'},
+ {n:'io.github.brave/brave-search-mcp-server',c:'search',en:'Web, image and video search with AI summaries. Needs a Brave Search API key.',ar:'بحث في الويب والصور والفيديو مع ملخصات ذكية. يحتاج مفتاح Brave Search API.'},
+ {n:'io.github.browserbase/mcp-server-browserbase',c:'browser',en:'Cloud browser automation with Stagehand and Browserbase.',ar:'أتمتة المتصفح في السحابة عبر Stagehand وBrowserbase.'},
+ {n:'com.apify/apify-mcp-server',c:'browser',en:'Extract data from websites with thousands of ready-made scrapers and automations.',ar:'استخراج البيانات من المواقع بآلاف أدوات السحب والأتمتة الجاهزة.'},
+ {n:'io.github.oraios/serena',c:'dev',en:'A toolkit for coding agents with semantic code retrieval and editing.',ar:'أدوات لوكلاء البرمجة تدعم استرجاع الكود وتحريره دلاليًا.'}
+];
+const FEAT = new Map(FEATURED.map(f => [f.n, f]));
+const featNote = s => { const f = FEAT.get(s.name); return f ? f[L==='ar'?'ar':'en'] : null; };
+async function loadFeatured(){
+  const need = FEATURED.filter(f => !byName.has(f.n));
+  await Promise.allSettled(need.map(async f => {
+    const r = await fetch(API+'/'+encodeURIComponent(f.n)+'/versions/latest'); if(!r.ok) throw 0;
+    const s = remember(await r.json()); s._full = true;
+  }));
+  for(const f of FEATURED){ const s = byName.get(f.n); if(s) s._cat = f.c; }
+  return FEATURED.map(f => byName.get(f.n)).filter(Boolean);
+}
+
 /* ================= quality score ================= */
 const SPAM = /\$\d|per[- ]query|testnet|x402|usdc|pay[- ]per|buy |airdrop|token sale/i;
 function quality(s){
@@ -233,6 +278,7 @@ function quality(s){
   const st = starsFor(s); if(st!=null) q += Math.min(4, Math.log10(st+1)*1.3);
   const days = (Date.now()-new Date(s._meta.updatedAt||0))/864e5; q += days<=30 ? 1 : days<=180 ? 0.5 : 0;
   if(SPAM.test((s.description||'')+' '+s.name)) q -= 3;
+  if(FEAT.has(s.name)) q += 6;
   return q;
 }
 function diversify(list, perNs=2){
@@ -327,10 +373,10 @@ function observeStars(root){ root.querySelectorAll('[data-repo]').forEach(el => 
 
 /* ================= rendering ================= */
 function cardHTML(s){
-  const g = ghRepo(s), key = g ? g.join('/') : '', st = starsFor(s);
+  const g = ghRepo(s), key = g ? g.join('/') : '', st = starsFor(s), note = featNote(s);
   return `<a class="card" href="#/server/${encodeURIComponent(s.name)}">
-    <div class="ch">${avatar(s)}<div class="ct"><h3>${esc(shortName(s))}</h3><div class="by">${esc(author(s))}</div></div></div>
-    <p dir="auto">${esc(s.description)}</p>
+    <div class="ch">${avatar(s)}<div class="ct"><h3>${esc(shortName(s))}</h3><div class="by">${esc(author(s))}</div></div>${note?`<span class="pick">★ ${esc(t('pick'))}</span>`:''}</div>
+    <p dir="auto">${esc(note || s.description)}</p>
     <div class="cf"><span class="stars" ${g?`data-repo="${esc(key)}" data-star="${esc(key)}"`:''}>${st!=null?STAR+fmtStars(st):''}</span>
       <span>${(!g && !safeUrl((s.repository||{}).url) && !safeUrl(s.websiteUrl)) ? `<span class="warn">${esc(t('noSource'))}</span> ` : ''}${esc(ago(s._meta.publishedAt))}</span></div></a>`;
 }
@@ -353,12 +399,13 @@ function parseHash(){
   if(!seg.length) return {v:'home'};
   if(seg[0]==='server') return {v:'server', name:decodeURIComponent(seg.slice(1).join('/'))};
   if(seg[0]==='categories') return {v:'cats'};
+  if(seg[0]==='featured') return {v:'featured'};
   if(seg[0]==='remote') return {v:'list', q:p.get('q')||'', cat:p.get('cat')||'', f:'remote', sort:p.get('sort')||'best', r:p.get('r')||'', tab:'remote'};
   if(seg[0]==='servers') return {v:'list', q:p.get('q')||'', cat:p.get('cat')||'', f:p.get('f')||'all', sort:p.get('sort')||'best', r:p.get('r')||'', tab:'servers'};
   return {v:'home'};
 }
 function setTabs(active){
-  $('tabs').innerHTML = [['home',t('tDiscover'),'#/'],['servers',t('tServers'),'#/servers'],['remote',t('tRemote'),'#/remote'],['cats',t('tCats'),'#/categories']]
+  $('tabs').innerHTML = [['home',t('tDiscover'),'#/'],['featured',t('tFeatured'),'#/featured'],['servers',t('tServers'),'#/servers'],['remote',t('tRemote'),'#/remote'],['cats',t('tCats'),'#/categories']]
     .map(([k,l,h]) => `<a href="${h}" class="${k===active?'on':''}">${l}</a>`).join('');
 }
 function listURL(r, patch){
@@ -377,6 +424,7 @@ async function render(){
   window.scrollTo(0,0);
   if(route.v==='home') return home(my);
   if(route.v==='cats'){ setTabs('cats'); return cats(); }
+  if(route.v==='featured'){ setTabs('featured'); return featuredPage(my); }
   if(route.v==='list'){ setTabs(route.tab); return list(my); }
   if(route.v==='server'){ setTabs(''); return detail(my); }
 }
@@ -385,15 +433,28 @@ async function render(){
 async function home(my){
   setTabs('home'); document.title = 'MCP Hub - Discover MCP servers';
   $('app').innerHTML = `<section class="hero"><h1>${esc(t('heroT'))}</h1><p>${esc(t('heroP'))}</p></section>
+    <div class="sec"><h2>${esc(t('featT'))}</h2><a href="#/featured">${esc(t('viewAll'))}</a></div>
+    <div id="feat">${skeletons(6)}</div>
     <div class="sec"><h2>${esc(t('browse'))}</h2><a href="#/categories">${esc(t('viewAll'))}</a></div>
     <div class="cats">${CATS.filter(c=>c[0]!=='other').map(c=>`<a class="cat" href="#/servers?cat=${c[0]}"><b>${c[1]}</b>${esc(catName(c[0]))}</a>`).join('')}</div>
     <div class="sec"><h2>${esc(t('recent'))}</h2><a href="#/servers?sort=new">${esc(t('viewAll'))}</a></div>
     <div id="rec">${skeletons(6)}</div>`;
+  loadFeatured().then(items => { if(my!==token || !$('feat')) return; $('feat').innerHTML = `<div class="grid">${items.slice(0,6).map(cardHTML).join('')}</div>`; observeStars($('feat')); }).catch(()=>{ if($('feat')) $('feat').innerHTML=''; });
   try{
     const {items} = await fetchPage({since:daysAgoISO(14), limit:100}); if(my!==token) return;
     items.sort((a,b)=> new Date(b._meta.updatedAt)-new Date(a._meta.updatedAt));
     $('rec').innerHTML = `<div class="grid">${items.slice(0,12).map(cardHTML).join('')}</div>`; observeStars($('rec'));
   }catch(e){ if(my===token) $('rec').innerHTML = `<div class="state">${esc(t('err'))}</div>`; }
+}
+
+/* ---- featured page ---- */
+async function featuredPage(my){
+  document.title = t('tFeatured')+' - MCP Hub';
+  $('app').innerHTML = `<div class="sec"><h2>${esc(t('featT'))}</h2></div><p class="meta" style="max-width:760px">${esc(t('featP'))}</p><div id="fl">${skeletons(6)}</div>`;
+  const items = await loadFeatured(); if(my!==token) return;
+  const groups = {}; items.forEach(s => (groups[s._cat] ||= []).push(s));
+  $('fl').innerHTML = CATS.filter(c => groups[c[0]]).map(c => `<div class="sec"><h2>${c[1]} ${esc(catName(c[0]))}</h2></div><div class="grid">${groups[c[0]].map(cardHTML).join('')}</div>`).join('');
+  observeStars($('fl'));
 }
 
 /* ---- categories ---- */
@@ -449,6 +510,10 @@ async function loadMore(){
     if(mine!==ls) return;
     const seen = new Set(ls.items.map(s=>s.name)); items.forEach(s=>{ if(!seen.has(s.name)) ls.items.push(s); });
     ls.cursor = next; if(!next) ls.done = true;
+    if(!route.q && route.sort!=='new' && !ls.featMerged){
+      ls.featMerged = true;
+      try{ const fs_ = await loadFeatured(); if(mine!==ls) return; const seen2 = new Set(ls.items.map(x=>x.name)); fs_.forEach(x=>{ if(!seen2.has(x.name)) ls.items.push(x); }); }catch(e){}
+    }
   }catch(e){ if(mine===ls && route.v==='list' && $('st')){ ls.loading=false; $('st').innerHTML = `<div class="state">${esc(t('err'))}</div>`; return; } }
   ls.loading = false;
   if(route.v!=='list') return;
@@ -491,7 +556,8 @@ async function detail(my){
     }catch(e){ if(my===token) $('app').innerHTML = `<a class="back" href="#/servers">${esc(t('back'))}</a><div class="state">${esc(t('notfound'))}</div>`; return; }
   }
   document.title = shortName(s)+' - MCP Hub';
-  const g = ghRepo(s), key = g ? g.join('/') : '', st = starsFor(s), cat = classify(s);
+  if(FEAT.has(s.name)) s._cat = FEAT.get(s.name).c;
+  const g = ghRepo(s), key = g ? g.join('/') : '', st = starsFor(s), cat = classify(s), note = featNote(s);
   const cfg = configs(s), repo = safeUrl((s.repository||{}).url), site = safeUrl(s.websiteUrl);
   const rel = [...byName.values()].filter(x => x.name!==s.name && classify(x)===cat).slice(0,6);
   $('app').innerHTML = `<a class="back" href="#/servers">${esc(t('back'))}</a>
@@ -499,7 +565,7 @@ async function detail(my){
     <div class="tags"><a class="tag" href="#/servers?cat=${cat}" style="text-decoration:none">${catById[cat][1]} ${esc(catName(cat))}</a>${kinds(s).map(k=>`<span class="tag ${k}">${esc(kindLabel(k))}</span>`).join('')}<span class="tag">v${esc(s.version)}</span></div></div>
     <div class="links">${g?`<span class="stars" data-repo="${esc(key)}" data-star="${esc(key)}" title="${esc(t('stars'))}">${st!=null?STAR+fmtStars(st):''}</span>`:''}${repo?`<a class="btn2" href="${esc(repo)}" target="_blank" rel="noopener noreferrer">${esc(t('repo'))} ↗</a>`:''}${site?`<a class="btn2" href="${esc(site)}" target="_blank" rel="noopener noreferrer">${esc(t('site'))} ↗</a>`:''}</div></div>
   <div class="dg"><div>
-    <div class="panel"><h2>${esc(t('about'))}</h2><p style="margin:0" dir="auto">${esc(s.description)}</p></div>
+    <div class="panel"><h2>${esc(t('about'))}</h2>${note?`<p style="margin:0 0 10px" dir="auto"><span class="pick" style="margin-inline-end:8px">★ ${esc(t('pick'))}</span>${esc(note)}</p><p class="note" style="margin:0" dir="auto">${esc(s.description)}</p>`:`<p style="margin:0" dir="auto">${esc(s.description)}</p>`}</div>
     <div class="panel"><h2>${esc(t('install'))}</h2>${cfg.length?`<div class="itabs" id="itabs">${cfg.map((c,i)=>`<button class="itab ${i?'':'on'}" data-t="${i}">${esc(c.title)}</button>`).join('')}</div><div id="cfg"></div><p class="note">${esc(t('replace'))}</p>`:`<p class="note">${esc(t('nosetup'))}</p>`}</div>
     <div class="panel" id="readme" hidden></div>
   </div><aside>
