@@ -98,6 +98,14 @@ select{border:1px solid var(--bd);background:var(--card);color:var(--fg);padding
 .rel .av{width:36px;height:36px;font-size:1rem;border-radius:8px}
 .rel span{min-width:0;font-size:.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .env{font-size:.88rem;margin:10px 0}.env code{background:var(--bg2);padding:1px 6px;border-radius:5px;direction:ltr;display:inline-block}
+/* readme */
+.md{font-size:.95rem;overflow-wrap:anywhere}
+.md h3{margin:18px 0 6px;font-size:1.05rem}.md h4{margin:14px 0 4px;font-size:.98rem}
+.md p{margin:8px 0}.md ul{margin:8px 0;padding-inline-start:22px}.md li{margin:3px 0}
+.md code{background:var(--bg2);padding:1px 6px;border-radius:5px;font-size:.88em;direction:ltr;unicode-bidi:embed}
+.md pre.code{padding:12px;margin:10px 0;overflow:auto;white-space:pre}
+.md pre.tbl{background:var(--bg2);color:var(--fg);padding:10px;border-radius:8px;overflow:auto;font:.78rem/1.5 ui-monospace,Menlo,Consolas,monospace;direction:ltr;text-align:left;white-space:pre}
+.warn{color:var(--mut);font-size:.78rem;border:1px dashed var(--bd);padding:1px 8px;border-radius:99px}
 footer{border-top:1px solid var(--bd);color:var(--mut);font-size:.85rem;text-align:center;padding:30px 20px 40px}
 </style>
 </head>
@@ -139,7 +147,7 @@ en:{dir:'ltr',search:'Search MCP servers, tools, integrations...',docs:'Docs',su
  cmdAlt:'Or add to your MCP config (Claude Desktop, Cursor, VS Code):',envVars:'Environment variables',req:'required',copy:'Copy',copied:'Copied ✓',
  replace:'Replace placeholders in <angle brackets>. Review what a server can access before you enable it.',nosetup:'No automatic setup is published for this server. Open the repository for install instructions.',urlVars:'The URL contains variables you must fill in.',
  foot:'Data from the official MCP Registry. Star counts come from GitHub and may be missing when the GitHub rate limit is reached. Always review a server and its permissions before you connect it.',notfound:'Server not found.',
- stars:'GitHub stars',remote:'Remote'},
+ stars:'GitHub stars',remote:'Remote',sortBest:'Best match',onlyRepo:'Has repository',noSource:'No source link',readme:'README',fullReadme:'Read the full README on GitHub ↗',readmeNote:'Shown from the project\'s README on GitHub.'},
 ar:{dir:'rtl',search:'ابحث عن خوادم MCP وأدواتها...',docs:'التوثيق',submit:'أضف خادمك',
  tDiscover:'استكشف',tServers:'الخوادم',tRemote:'الخوادم البعيدة',tCats:'التصنيفات',
  heroT:'اعثر على خادم MCP المناسب لتطبيقك',heroP:'تصفّح الخوادم من سجل Model Context Protocol الرسمي، وانسخ إعدادًا جاهزًا لـ Claude وCursor وVS Code.',
@@ -151,7 +159,7 @@ ar:{dir:'rtl',search:'ابحث عن خوادم MCP وأدواتها...',docs:'ا
  cmdAlt:'أو أضِفه إلى إعدادات MCP (Claude Desktop أو Cursor أو VS Code):',envVars:'متغيرات البيئة',req:'مطلوب',copy:'نسخ',copied:'تم النسخ ✓',
  replace:'استبدل القيم بين الأقواس <> ببياناتك. راجع صلاحيات الخادم قبل تفعيله.',nosetup:'لا يوجد إعداد تلقائي منشور لهذا الخادم. افتح المستودع لمعرفة طريقة التثبيت.',urlVars:'الرابط يحتوي متغيرات يجب ملؤها.',
  foot:'البيانات من سجل MCP الرسمي. أعداد النجوم من GitHub وقد لا تظهر عند بلوغ حد الطلبات. راجع الخادم وصلاحياته دائمًا قبل ربطه.',notfound:'الخادم غير موجود.',
- stars:'نجوم GitHub',remote:'بعيد'}
+ stars:'نجوم GitHub',remote:'بعيد',sortBest:'الأفضل أولًا',onlyRepo:'له مستودع',noSource:'بدون رابط مصدر',readme:'ملف README',fullReadme:'اقرأ README كاملًا على GitHub ↗',readmeNote:'يُعرض من ملف README الخاص بالمشروع على GitHub.'}
 };
 let L = localStorage.getItem('mcphub-lang') || 'en'; if(!I[L]) L='en';
 const t = k => I[L][k];
@@ -213,6 +221,84 @@ const fmtDate = iso => iso ? new Date(iso).toLocaleDateString(L==='ar'?'ar':'en'
 const STAR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>';
 const fmtStars = n => n>=1000 ? (n/1000).toFixed(n>=10000?0:1).replace(/\.0$/,'')+'K' : String(n);
 
+/* ================= quality score ================= */
+const SPAM = /\$\d|per[- ]query|testnet|x402|usdc|pay[- ]per|buy |airdrop|token sale/i;
+function quality(s){
+  let q = 0;
+  if(ghRepo(s)) q += 3; else if(safeUrl((s.repository||{}).url)) q += 1;
+  if(safeUrl(s.websiteUrl)) q += 0.5;
+  if((s.icons||[]).length) q += 1;
+  if(s.title) q += 0.5;
+  const dl = (s.description||'').length; q += dl>=70 ? 1 : dl>=40 ? 0.5 : 0;
+  const st = starsFor(s); if(st!=null) q += Math.min(4, Math.log10(st+1)*1.3);
+  const days = (Date.now()-new Date(s._meta.updatedAt||0))/864e5; q += days<=30 ? 1 : days<=180 ? 0.5 : 0;
+  if(SPAM.test((s.description||'')+' '+s.name)) q -= 3;
+  return q;
+}
+function diversify(list, perNs=2){
+  const cnt = {}, keep = [], rest = [];
+  for(const s of list){ const ns = s.name.split('/')[0]; cnt[ns] = (cnt[ns]||0)+1; (cnt[ns] <= perNs ? keep : rest).push(s); }
+  return keep.concat(rest);
+}
+
+/* ================= tiny safe markdown ================= */
+function mdInline(raw, base){
+  let x = esc(raw);
+  x = x.replace(/`([^`]+)`/g, '<code>$1</code>');
+  x = x.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+  x = x.replace(/\[([^\]]+)\]\(([^)\s]+)[^)]*\)/g, (m, txt, url) => {
+    if(/^#/.test(url)) return txt;
+    let u = url; if(!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = base ? base + u.replace(/^\.?\//,'') : '';
+    return /^https?:\/\//i.test(u) ? `<a href="${u}" target="_blank" rel="noopener noreferrer nofollow">${txt}</a>` : txt;
+  });
+  return x;
+}
+function mdRender(src, base){
+  src = src.replace(/<(script|style|iframe|object|embed)[\s\S]*?<\/\1\s*>/gi,'').replace(/<!--[\s\S]*?-->/g,'').replace(/<\/?[a-zA-Z][^>]*>/g,'');
+  const lines = src.split(/\r?\n/); const out = []; let para = [], list = [], code = null, tbl = [];
+  const flush = () => {
+    if(para.length){ out.push('<p>'+mdInline(para.join(' '),base)+'</p>'); para = []; }
+    if(list.length){ out.push('<ul>'+list.map(i=>'<li>'+mdInline(i,base)+'</li>').join('')+'</ul>'); list = []; }
+    if(tbl.length){ out.push('<pre class="tbl">'+esc(tbl.join('\n'))+'</pre>'); tbl = []; }
+  };
+  for(const ln of lines){
+    if(code!==null){ if(/^\s*```/.test(ln)){ out.push('<pre class="code">'+esc(code.join('\n'))+'</pre>'); code = null; } else code.push(ln); continue; }
+    if(/^\s*```/.test(ln)){ flush(); code = []; continue; }
+    if(/^\s*!\[[^\]]*\]\([^)]*\)\s*$/.test(ln) || /^\s*\[!\[/.test(ln)) continue;   // images / badges
+    const h = /^(#{1,6})\s+(.*)$/.exec(ln);
+    if(h){ flush(); out.push(`<h${h[1].length<=2?3:4}>${mdInline(h[2].replace(/!\[[^\]]*\]\([^)]*\)/g,''),base)}</h${h[1].length<=2?3:4}>`); continue; }
+    if(/^\s*\|/.test(ln)){ if(para.length||list.length){ flush(); } tbl.push(ln); continue; }
+    const li = /^\s*(?:[-*+]|\d+[.)])\s+(.*)$/.exec(ln);
+    if(li){ if(para.length||tbl.length) flush(); list.push(li[1]); continue; }
+    if(!ln.trim()){ flush(); continue; }
+    if(tbl.length) flush(); if(list.length) flush();
+    para.push(ln.trim());
+  }
+  if(code!==null) out.push('<pre class="code">'+esc(code.join('\n'))+'</pre>');
+  flush(); return out.join('');
+}
+const readmeCache = new Map();
+async function loadReadme(s){
+  const g = ghRepo(s); if(!g) return null;
+  const key = g.join('/')+'|'+((s.repository||{}).subfolder||''); if(readmeCache.has(key)) return readmeCache.get(key);
+  const sub = ((s.repository||{}).subfolder||'').replace(/^\/+|\/+$/g,'');
+  const tries = []; if(sub) tries.push(sub+'/'); tries.push('');
+  let result = null;
+  for(const dir of tries){
+    for(const nm of ['README.md','readme.md']){
+      try{
+        const r = await fetch(`https://raw.githubusercontent.com/${g[0]}/${g[1]}/HEAD/${dir}${nm}`);
+        if(!r.ok) continue;
+        let txt = await r.text(); const cut = txt.length > 6000; txt = txt.slice(0, 6000);
+        if(cut) txt = txt.slice(0, txt.lastIndexOf('\n'));
+        result = {html: mdRender(txt, `https://github.com/${g[0]}/${g[1]}/blob/HEAD/${dir}`), cut}; break;
+      }catch(e){}
+    }
+    if(result) break;
+  }
+  readmeCache.set(key, result); return result;
+}
+
 /* ================= GitHub stars (lazy, cached, rate-limit aware) ================= */
 const SKEY='mcphub-stars-v1'; let starCache={}; try{ starCache = JSON.parse(localStorage.getItem(SKEY)||'{}'); }catch(e){}
 let ghBlockedUntil = 0, ghQueue = [], ghActive = 0;
@@ -246,7 +332,7 @@ function cardHTML(s){
     <div class="ch">${avatar(s)}<div class="ct"><h3>${esc(shortName(s))}</h3><div class="by">${esc(author(s))}</div></div></div>
     <p dir="auto">${esc(s.description)}</p>
     <div class="cf"><span class="stars" ${g?`data-repo="${esc(key)}" data-star="${esc(key)}"`:''}>${st!=null?STAR+fmtStars(st):''}</span>
-      <span>${esc(ago(s._meta.publishedAt))}</span></div></a>`;
+      <span>${(!g && !safeUrl((s.repository||{}).url) && !safeUrl(s.websiteUrl)) ? `<span class="warn">${esc(t('noSource'))}</span> ` : ''}${esc(ago(s._meta.publishedAt))}</span></div></a>`;
 }
 function skeletons(n=6){ return `<div class="grid">${'<div class="skel"></div>'.repeat(n)}</div>`; }
 
@@ -267,8 +353,8 @@ function parseHash(){
   if(!seg.length) return {v:'home'};
   if(seg[0]==='server') return {v:'server', name:decodeURIComponent(seg.slice(1).join('/'))};
   if(seg[0]==='categories') return {v:'cats'};
-  if(seg[0]==='remote') return {v:'list', q:p.get('q')||'', cat:p.get('cat')||'', f:'remote', sort:p.get('sort')||'az', tab:'remote'};
-  if(seg[0]==='servers') return {v:'list', q:p.get('q')||'', cat:p.get('cat')||'', f:p.get('f')||'all', sort:p.get('sort')||'az', tab:'servers'};
+  if(seg[0]==='remote') return {v:'list', q:p.get('q')||'', cat:p.get('cat')||'', f:'remote', sort:p.get('sort')||'best', r:p.get('r')||'', tab:'remote'};
+  if(seg[0]==='servers') return {v:'list', q:p.get('q')||'', cat:p.get('cat')||'', f:p.get('f')||'all', sort:p.get('sort')||'best', r:p.get('r')||'', tab:'servers'};
   return {v:'home'};
 }
 function setTabs(active){
@@ -277,7 +363,7 @@ function setTabs(active){
 }
 function listURL(r, patch){
   const n = {...r, ...patch}; const p = new URLSearchParams();
-  if(n.q) p.set('q',n.q); if(n.cat) p.set('cat',n.cat); if(n.sort && n.sort!=='az') p.set('sort',n.sort);
+  if(n.q) p.set('q',n.q); if(n.cat) p.set('cat',n.cat); if(n.sort && n.sort!=='best') p.set('sort',n.sort); if(n.r) p.set('r','1');
   if(n.f && n.f!=='all' && n.f!=='remote') p.set('f',n.f);
   const base = n.f==='remote' && !patch.f ? '#/remote' : '#/servers'; const s = p.toString();
   return base + (s ? '?'+s : '');
@@ -320,16 +406,18 @@ function cats(){
 let ls = null; // list state
 async function list(my){
   const r = route; document.title = (r.tab==='remote'?t('tRemote'):t('tServers'))+' - MCP Hub';
-  const key = JSON.stringify([r.q,r.sort]);
+  const key = JSON.stringify([r.q, r.sort==='new' ? 'new' : 'all']);
   if(!ls || ls.key!==key){ ls = {key, items:[], cursor:null, loading:false, done:false, auto:0, my}; }
   const F = [['all',t('fAll')],['remote',t('fRemote')],['npm','npm'],['pypi',t('fPy')],['oci',t('fDocker')]];
   $('app').innerHTML = `<div class="tb">
       ${F.map(([k,l])=>`<a class="chip ${k===r.f?'on':''}" href="${k==='remote'?'#/remote'+(r.q||r.cat?'?'+new URLSearchParams({...(r.q?{q:r.q}:{}),...(r.cat?{cat:r.cat}:{})}):''):listURL(r,{f:k})}" style="text-decoration:none;color:inherit">${l}</a>`).join('')}
       <select id="selcat"><option value="">${esc(t('allCats'))}</option>${CATS.map(c=>`<option value="${c[0]}" ${c[0]===r.cat?'selected':''}>${c[1]} ${esc(catName(c[0]))}</option>`).join('')}</select>
-      <select id="selsort"><option value="az" ${r.sort==='az'?'selected':''}>${esc(t('sortAz'))}</option><option value="new" ${r.sort==='new'?'selected':''}>${esc(t('sortNew'))}</option></select>
+      <select id="selsort"><option value="best" ${r.sort==='best'?'selected':''}>${esc(t('sortBest'))}</option><option value="az" ${r.sort==='az'?'selected':''}>${esc(t('sortAz'))}</option><option value="new" ${r.sort==='new'?'selected':''}>${esc(t('sortNew'))}</option></select>
+      <label class="chip ${r.r?'on':''}" style="display:flex;gap:6px;align-items:center;cursor:pointer;margin:0"><input type="checkbox" id="chkrepo" ${r.r?'checked':''} style="width:auto"> ${esc(t('onlyRepo'))}</label>
     </div><p class="meta" id="meta"></p><div id="res"></div><div id="st"></div><button class="more" id="more" hidden>${esc(t('more'))}</button>`;
   $('selcat').onchange = e => location.hash = listURL(r,{cat:e.target.value});
   $('selsort').onchange = e => location.hash = listURL(r,{sort:e.target.value});
+  $('chkrepo').onchange = e => location.hash = listURL(r,{r:e.target.checked?'1':''});
   $('more').onclick = () => { ls.auto = -99; loadMore(); };
   draw(); if(!ls.items.length && !ls.done) loadMore();
 }
@@ -337,7 +425,10 @@ function filtered(){
   let a = ls.items; const r = route;
   if(r.f && r.f!=='all') a = a.filter(s => kinds(s).includes(r.f));
   if(r.cat) a = a.filter(s => classify(s)===r.cat);
+  if(r.r) a = a.filter(s => ghRepo(s) || safeUrl((s.repository||{}).url));
   if(r.sort==='new') a = [...a].sort((x,y)=> new Date(y._meta.updatedAt)-new Date(x._meta.updatedAt));
+  else if(r.sort==='best') a = diversify([...a].sort((x,y)=> quality(y)-quality(x)));
+  else a = [...a].sort((x,y)=> x.name.localeCompare(y.name));
   return a;
 }
 function draw(){
@@ -363,7 +454,9 @@ async function loadMore(){
   if(route.v!=='list') return;
   draw();
   // auto-load more pages while a category/type filter leaves too few results
-  if(ls.cursor && !ls.done && ls.auto>=0 && ls.auto<8 && filtered().length < 24 && (route.cat || (route.f!=='all'))){ ls.auto++; loadMore(); }
+  const narrow = route.cat || route.f!=='all' || route.r;
+  const needMore = (narrow && filtered().length < 24) || (route.sort==='best' && ls.items.length < 300);
+  if(ls.cursor && !ls.done && ls.auto>=0 && ls.auto<8 && needMore){ ls.auto++; loadMore(); }
 }
 
 /* ---- detail ---- */
@@ -408,6 +501,7 @@ async function detail(my){
   <div class="dg"><div>
     <div class="panel"><h2>${esc(t('about'))}</h2><p style="margin:0" dir="auto">${esc(s.description)}</p></div>
     <div class="panel"><h2>${esc(t('install'))}</h2>${cfg.length?`<div class="itabs" id="itabs">${cfg.map((c,i)=>`<button class="itab ${i?'':'on'}" data-t="${i}">${esc(c.title)}</button>`).join('')}</div><div id="cfg"></div><p class="note">${esc(t('replace'))}</p>`:`<p class="note">${esc(t('nosetup'))}</p>`}</div>
+    <div class="panel" id="readme" hidden></div>
   </div><aside>
     <div class="panel"><h2>${esc(t('details'))}</h2><dl class="dl">
       <dt>${esc(t('version'))}</dt><dd>${esc(s.version)}</dd>
@@ -420,6 +514,12 @@ async function detail(my){
     ${rel.length?`<div class="panel"><h2>${esc(t('related'))}</h2><div class="rel">${rel.map(x=>`<a href="#/server/${encodeURIComponent(x.name)}">${avatar(x)}<span dir="auto">${esc(shortName(x))}</span></a>`).join('')}</div></div>`:''}
   </aside></div>`;
   observeStars($('app'));
+  loadReadme(s).then(rd => {
+    if(my!==token || !rd || !$('readme')) return;
+    const g2 = ghRepo(s); const sub = ((s.repository||{}).subfolder||'').replace(/^\/+|\/+$/g,'');
+    $('readme').innerHTML = `<h2>${esc(t('readme'))}</h2><div class="md" dir="auto">${rd.html}</div><p class="note">${esc(t('readmeNote'))} <a href="https://github.com/${esc(g2[0])}/${esc(g2[1])}${sub?'/tree/HEAD/'+esc(sub):''}#readme" target="_blank" rel="noopener noreferrer">${esc(t('fullReadme'))}</a></p>`;
+    $('readme').hidden = false;
+  });
   const show = i => { const c = cfg[i];
     $('cfg').innerHTML = `<div class="cw"><pre class="code" id="c1">${esc(c.cli)}</pre><button class="copy" data-c="c1">${esc(t('copy'))}</button></div>
       <div class="note">${esc(t('cmdAlt'))}</div>
