@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP Hub - Discover MCP servers</title>
+<meta name="description" content="Search the official Model Context Protocol registry. Find MCP servers and copy ready-made setup for Claude, Cursor and VS Code.">
+<style>
+:root{--bg:#0b0d12;--card:#141824;--card2:#1b2031;--fg:#e8ebf3;--mut:#8b94a8;--bd:#262c3f;--acc:#7c8cff;--acc2:#a78bfa;--ok:#34d399;--r:14px}
+@media(prefers-color-scheme:light){:root{--bg:#f5f6fb;--card:#fff;--card2:#f1f3fa;--fg:#0f1425;--mut:#5d667c;--bd:#e1e5f0;--acc:#4f46e5;--acc2:#7c3aed}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}
+a{color:var(--acc)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:18px 0}
+.logo{font-weight:800;font-size:1.15rem;display:flex;align-items:center;gap:8px}
+.logo i{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;color:#fff;font-style:normal;font-size:.9rem}
+nav a{color:var(--mut);text-decoration:none;font-size:.9rem;margin-inline-start:18px}
+nav a:hover{color:var(--fg)}
+.hero{text-align:center;padding:36px 0 26px}
+.hero h1{margin:0;font-size:clamp(2rem,5vw,3.2rem);line-height:1.15;font-weight:800;letter-spacing:-.02em}
+.hero h1 span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--mut);max-width:620px;margin:14px auto 0;font-size:1.05rem}
+.search{max-width:680px;margin:26px auto 0;position:relative}
+.search input{width:100%;padding:16px 20px 16px 48px;border-radius:99px;border:1.5px solid var(--bd);background:var(--card);color:var(--fg);font:inherit;font-size:1.02rem;outline:0;transition:.15s}
+.search input:focus{border-color:var(--acc);box-shadow:0 0 0 4px #7c8cff2b}
+.search svg{position:absolute;left:18px;top:50%;translate:0 -50%;width:20px;height:20px;color:var(--mut)}
+.chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:18px 0 6px}
+.chip{border:1px solid var(--bd);background:var(--card);color:var(--fg);padding:6px 14px;border-radius:99px;font:inherit;font-size:.85rem;cursor:pointer}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.meta{display:flex;justify-content:space-between;color:var(--mut);font-size:.85rem;margin:18px 0 12px;min-height:1.4em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:16px;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:.15s;text-align:left;font:inherit;color:inherit}
+.card:hover{border-color:var(--acc);transform:translateY(-2px)}
+.card h3{margin:0;font-size:1rem;line-height:1.3;word-break:break-word}
+.card .ns{color:var(--mut);font-size:.78rem;word-break:break-all}
+.card p{margin:0;color:var(--mut);font-size:.88rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;flex:1}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:.72rem;padding:2px 9px;border-radius:99px;background:var(--card2);color:var(--mut);font-weight:600}
+.tag.remote{color:var(--ok)}.tag.npm{color:#f87171}.tag.pypi{color:#60a5fa}.tag.oci{color:#38bdf8}
+.more{display:block;margin:26px auto;padding:12px 30px;border-radius:99px;border:1px solid var(--bd);background:var(--card);color:var(--fg);font:inherit;font-weight:600;cursor:pointer}
+.more:hover{border-color:var(--acc)}
+.state{text-align:center;color:var(--mut);padding:50px 0}
+.skel{height:150px;border-radius:var(--r);background:linear-gradient(90deg,var(--card),var(--card2),var(--card));background-size:200% 100%;animation:sh 1.2s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+dialog{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:18px;padding:0;width:min(720px,94vw);max-height:90vh}
+dialog::backdrop{background:#000a}
+.dh{padding:20px 22px 12px;border-bottom:1px solid var(--bd);position:relative}
+.dh h2{margin:0 36px 2px 0;font-size:1.25rem}.dh .ns{color:var(--mut);font-size:.8rem;word-break:break-all}
+.x{position:absolute;top:14px;right:14px;border:0;background:var(--card2);color:var(--fg);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1.1rem}
+.db{padding:16px 22px 22px;overflow:auto;max-height:calc(90vh - 100px)}
+.db p{margin:0 0 14px}
+.links{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px;font-size:.88rem}
+.tabs{display:flex;gap:6px;margin:6px 0 10px;flex-wrap:wrap}
+.tab{border:0;background:var(--card2);color:var(--mut);padding:6px 14px;border-radius:8px;font:inherit;font-size:.82rem;font-weight:600;cursor:pointer}
+.tab.on{background:var(--acc);color:#fff}
+.code{position:relative;background:#0a0c12;color:#d7dcf0;border:1px solid var(--bd);border-radius:10px;padding:14px;font:.8rem/1.55 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;margin:0;padding-right:72px}
+.copy{position:absolute;top:8px;right:8px;border:0;background:#ffffff1f;color:#fff;padding:4px 10px;border-radius:6px;font:inherit;font-size:.75rem;cursor:pointer}
+.codewrap{position:relative}
+.note{color:var(--mut);font-size:.8rem;margin:10px 0 0}
+.env{margin:12px 0 0;font-size:.85rem}.env code{background:var(--card2);padding:1px 6px;border-radius:5px}
+footer{color:var(--mut);font-size:.82rem;text-align:center;padding:40px 0 50px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="logo"><i>⬡</i> MCP Hub</div>
+    <div><a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">What is MCP?</a><a href="https://registry.modelcontextprotocol.io" target="_blank" rel="noopener">Registry</a></div>
+  </nav>
+
+  <header class="hero">
+    <h1>Discover <span>MCP servers</span><br>for your AI apps</h1>
+    <p>Search the official Model Context Protocol registry and get a ready-to-paste setup for Claude, Cursor and VS Code.</p>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="q" type="search" placeholder="Search servers: github, postgres, browser, slack..." autocomplete="off">
+    </div>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <div class="meta"><span id="count"></span><span>Live from registry.modelcontextprotocol.io</span></div>
+  <main class="grid" id="grid"></main>
+  <div id="state"></div>
+  <button class="more" id="more" hidden>Load more</button>
+  <footer>Data from the official MCP Registry. Always review a server and its permissions before you connect it.</footer>
+</div>
+
+<dialog id="dlg"><div class="dh"><h2 id="dt"></h2><div class="ns" id="dn"></div><button class="x" id="dx" aria-label="Close">×</button></div><div class="db" id="dbody"></div></dialog>
+
+<script>
+const API = 'https://registry.modelcontextprotocol.io/v0/servers';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let servers = [], cursor = null, query = '', filter = 'all', loading = false, seq = 0;
+
+const FILTERS = [['all','All'],['remote','Remote'],['npm','npm'],['pypi','Python'],['oci','Docker']];
+
+function kinds(s){
+  const k = new Set();
+  if((s.remotes||[]).length) k.add('remote');
+  for(const p of s.packages||[]){
+    const t = (p.registryType||'').toLowerCase();
+    if(t==='npm') k.add('npm'); else if(t==='pypi') k.add('pypi'); else if(t==='oci') k.add('oci'); else if(t) k.add(t);
+  }
+  return [...k];
+}
+const label = {remote:'Remote',npm:'npm',pypi:'Python',oci:'Docker'};
+const shortName = s => s.title || s.name.split('/').pop();
+const slug = s => s.name.split('/').pop().replace(/[^a-zA-Z0-9_-]/g,'-').toLowerCase();
+
+function renderChips(){
+  $('chips').innerHTML = FILTERS.map(([k,l]) => `<button class="chip ${k===filter?'on':''}" data-f="${k}">${l}</button>`).join('');
+}
+function visible(){ return filter==='all' ? servers : servers.filter(s => kinds(s).includes(filter)); }
+
+function renderGrid(){
+  const list = visible();
+  $('grid').innerHTML = list.map(s => {
+    const idx = servers.indexOf(s);
+    return `<button class="card" data-i="${idx}">
+      <h3>${esc(shortName(s))}</h3><div class="ns">${esc(s.name)}</div>
+      <p>${esc(s.description)}</p>
+      <div class="tags">${kinds(s).map(k => `<span class="tag ${k}">${esc(label[k]||k)}</span>`).join('')}<span class="tag">v${esc(s.version)}</span></div>
+    </button>`;
+  }).join('');
+  $('count').textContent = list.length ? `${list.length} server${list.length>1?'s':''} shown` : '';
+  $('state').innerHTML = (!list.length && !loading) ? '<div class="state">No servers found. Try another search or filter.</div>' : '';
+  $('more').hidden = !cursor || loading;
+}
+
+async function load(reset){
+  if(loading) return;
+  const my = ++seq; loading = true;
+  if(reset){ servers = []; cursor = null; $('grid').innerHTML = Array(6).fill('<div class="skel"></div>').join(''); $('state').innerHTML=''; }
+  $('more').hidden = true; $('more').textContent = 'Loading...';
+  try{
+    const u = new URL(API); u.searchParams.set('limit','30'); u.searchParams.set('version','latest');
+    if(query) u.searchParams.set('search', query);
+    if(cursor) u.searchParams.set('cursor', cursor);
+    const r = await fetch(u); if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json(); if(my!==seq) return;
+    const seen = new Set(servers.map(s => s.name));
+    for(const x of d.servers||[]){ if(!seen.has(x.server.name)){ seen.add(x.server.name); servers.push(x.server); } }
+    cursor = d.metadata && d.metadata.nextCursor || null;
+    loading = false; renderGrid();
+    // if filter hides everything but more pages exist, keep loading
+    if(!visible().length && cursor && filter!=='all') load(false);
+  }catch(e){
+    if(my!==seq) return;
+    loading = false; $('grid').innerHTML = '';
+    $('state').innerHTML = '<div class="state">Could not reach the registry. Check your connection and try again.</div>';
+  }finally{ loading = false; $('more').textContent = 'Load more'; if(my===seq) $('more').hidden = !cursor; }
+}
+
+/* ---- setup snippets ---- */
+function configs(s){
+  const name = slug(s), out = [];
+  const envObj = arr => Object.fromEntries((arr||[]).map(e => [e.name, e.isRequired ? '<your-'+e.name.toLowerCase().replace(/_/g,'-')+'>' : '']).filter(([k,v]) => v));
+  for(const r of s.remotes||[]){
+    const type = r.type==='sse' ? 'sse' : 'http';
+    const headers = Object.fromEntries((r.headers||[]).filter(h=>h.isRequired).map(h => [h.name,'<value>']));
+    const entry = {type, url:r.url}; if(Object.keys(headers).length) entry.headers = headers;
+    out.push({title:'Remote ('+type+')', cli:`claude mcp add --transport ${type} ${name} ${r.url}`, json:{mcpServers:{[name]:entry}}, env:[], note: r.url.includes('{')?'The URL contains variables you must fill in.':''});
+  }
+  for(const p of s.packages||[]){
+    const t = (p.registryType||'').toLowerCase(); let cmd, args;
+    if(t==='npm'){ cmd='npx'; args=['-y', p.identifier + (p.version?'@'+p.version:'')]; }
+    else if(t==='pypi'){ cmd='uvx'; args=[p.identifier + (p.version?'=='+p.version:'')]; }
+    else if(t==='oci'){ cmd='docker'; args=['run','-i','--rm', p.identifier]; }
+    else continue;
+    const env = envObj(p.environmentVariables);
+    const entry = {command:cmd, args}; if(Object.keys(env).length) entry.env = env;
+    const envFlags = Object.keys(env).map(k=>`-e ${k}=${env[k]} `).join('');
+    out.push({title:({npm:'npm',pypi:'Python (uvx)',oci:'Docker'})[t], cli:`claude mcp add ${envFlags}${name} -- ${cmd} ${args.join(' ')}`, json:{mcpServers:{[name]:entry}}, env:p.environmentVariables||[], note:''});
+  }
+  return out;
+}
+
+function openDetail(s){
+  $('dt').textContent = shortName(s); $('dn').textContent = s.name;
+  const repo = s.repository && s.repository.url, site = s.websiteUrl;
+  const cfg = configs(s);
+  $('dbody').innerHTML = `<p>${esc(s.description)}</p>
+    <div class="links">${repo?`<a href="${esc(repo)}" target="_blank" rel="noopener noreferrer">Repository ↗</a>`:''}${site?`<a href="${esc(site)}" target="_blank" rel="noopener noreferrer">Website ↗</a>`:''}<span class="tag">v${esc(s.version)}</span></div>
+    ${cfg.length ? `<div class="tabs" id="tabs">${cfg.map((c,i)=>`<button class="tab ${i?'':'on'}" data-t="${i}">${esc(c.title)}</button>`).join('')}</div><div id="cfg"></div>
+      <p class="note">Replace placeholders in &lt;angle brackets&gt;. Review what a server can access before you enable it.</p>`
+      : '<p class="note">No automatic setup is published for this server. Open the repository for install instructions.</p>'}`;
+  const show = i => {
+    const c = cfg[i];
+    $('cfg').innerHTML = `<div class="codewrap"><pre class="code" id="c1">${esc(c.cli)}</pre><button class="copy" data-c="c1">Copy</button></div>
+      <div class="note" style="margin:12px 0 6px">Or add to your MCP config (Claude Desktop, Cursor, VS Code):</div>
+      <div class="codewrap"><pre class="code" id="c2">${esc(JSON.stringify(c.json,null,2))}</pre><button class="copy" data-c="c2">Copy</button></div>
+      ${c.env.length?`<div class="env"><b>Environment variables:</b><br>${c.env.map(e=>`<code>${esc(e.name)}</code>${e.isRequired?' (required)':''}${e.description?' - '+esc(e.description):''}`).join('<br>')}</div>`:''}
+      ${c.note?`<p class="note">${esc(c.note)}</p>`:''}`;
+  };
+  if(cfg.length){ show(0); $('tabs').onclick = e => { const b = e.target.closest('[data-t]'); if(!b) return; document.querySelectorAll('#tabs .tab').forEach(t=>t.classList.toggle('on',t===b)); show(+b.dataset.t); }; }
+  $('dlg').showModal();
+}
+
+/* ---- events ---- */
+let deb;
+$('q').addEventListener('input', e => { clearTimeout(deb); deb = setTimeout(() => { query = e.target.value.trim(); loading=false; load(true); }, 350); });
+$('chips').addEventListener('click', e => { const b = e.target.closest('[data-f]'); if(!b) return; filter = b.dataset.f; renderChips(); renderGrid(); if(!visible().length && cursor) load(false); });
+$('grid').addEventListener('click', e => { const c = e.target.closest('[data-i]'); if(c) openDetail(servers[+c.dataset.i]); });
+$('more').addEventListener('click', () => load(false));
+$('dx').onclick = () => $('dlg').close();
+$('dlg').addEventListener('click', e => { if(e.target===$('dlg')) $('dlg').close(); });
+$('dlg').addEventListener('click', async e => {
+  const b = e.target.closest('[data-c]'); if(!b) return;
+  try{ await navigator.clipboard.writeText($(b.dataset.c).textContent); b.textContent='Copied ✓'; }catch(_){ b.textContent='Select & copy'; }
+  setTimeout(()=>b.textContent='Copy',1500);
+});
+
+renderChips(); load(true);
+</script>
+</body>
+</html>
